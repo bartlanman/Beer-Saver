@@ -35,6 +35,7 @@ The job is to get negative variance as close to zero as possible. Then keep the 
 | 7 | [Settings & administration](docs/07-settings-admin.md) | Users, alerts, locations, hours, beverages, sizes, calibration |
 | 8 | [Troubleshooting variance](docs/08-troubleshooting.md) | Symptom → likely cause → fix |
 | 9 | [Support, hardware & accounts](docs/09-support-hardware.md) | Getting help, login recovery, hardware facts, integrations |
+| 10 | [BeerSAVER API](docs/10-api.md) | REST API: auth, endpoints, what to build with it |
 
 ---
 
