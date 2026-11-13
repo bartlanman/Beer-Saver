@@ -118,13 +118,17 @@ def untappd_sync(changes, beers, meta, live):
         if cur:
             http("DELETE", f"{UT_API}/items/{cur['id']}", email, token)
         if want:
-            item = http("POST", f"{UT_API}/sections/{sec}/items", email, token,
-                        {"untappd_id": want["untappd_id"]})["item"]
-            http("PUT", f"{UT_API}/items/{item['id']}", email, token,
-                 {"tap_number": t["tap"], "name": want.get("menu_name") or item.get("name")})
+            res = http("POST", f"{UT_API}/sections/{sec}/items", email, token,
+                       {"untappd_id": want["untappd_id"]})
+            item = res.get("item") or (res.get("items") or [None])[0]
+            body = {"tap_number": t["tap"]}
+            if want.get("menu_name"):
+                body["name"] = want["menu_name"]
+            http("PATCH", f"{UT_API}/items/{item['id']}", email, token, {"item": body})
+            sizes = meta["untappd_container_size_ids"]
             for size, price in (want.get("prices") or meta["default_prices"]).items():
                 http("POST", f"{UT_API}/items/{item['id']}/containers", email, token,
-                     {"container_size_name": size, "price": price})
+                     {"container": {"container_size_id": sizes[size], "price": float(price)}})
     return [x for x in todo if x[0] == "unmapped"]
 
 
@@ -176,7 +180,10 @@ def main():
     for t in changes:
         print(f"  {t['bar']} {t['tap']:5} {t['beer']}  (changed {t['connect']}, {t['pct']}% left)")
 
-    unmapped = [] if a.no_untappd else untappd_sync(changes, beers, meta, a.live)
+    first_run = not old and not a.force
+    if first_run:
+        print("  First run: recording the current taps as the starting point; Untappd left as is.")
+    unmapped = [] if (a.no_untappd or first_run) else untappd_sync(changes, beers, meta, a.live)
     menu = render_menu(taps, beers)
     print(f"  Menu: {menu}")
     printer = os.environ.get("MENU_PRINTER")

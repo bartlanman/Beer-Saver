@@ -4,6 +4,7 @@
   "untappd_tap_menu_id": 97291,
   "untappd_tap_section_id": 528496,
   "default_prices": {"16oz": "7.00", "8oz": "3.50", "4oz": "2.25"},
+  "untappd_container_size_ids": {"16oz": 602, "8oz": 346, "4oz": 721},
   "beers": [
     {"beersaver": "The Hornig Lager", "untappd_id": 4430477, "menu_name": "The Hornig Amber Lager", "brewery": "Basic City Beer Co", "abv": "5.4", "prices": {"16oz": "6.50", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed"},
     {"beersaver": "Our Daily Pils", "untappd_id": 2595572, "menu_name": "Our Daily Pils", "brewery": "Basic City Beer Co", "abv": "4.7", "prices": {"16oz": "6.00", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed"},
