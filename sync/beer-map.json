@@ -22,7 +22,7 @@
     {"beersaver": "Crispy Bask Lager", "untappd_id": 6175274, "menu_name": "Crispy Bask Lager", "brewery": "Basic City Beer Co", "abv": "4.5", "prices": {"16oz": "6.50", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed"},
     {"beersaver": "Crispy Bask", "untappd_id": 6175274, "menu_name": "Crispy Bask Lager", "status": "duplicate"},
     {"beersaver": "Falcon Smash Triple Crossing", "untappd_id": 636361, "menu_name": "Guest Tap! - Falcon Smash", "brewery": "Triple Crossing", "abv": "7.0", "prices": {"16oz": "8.00", "8oz": "5.00", "4oz": "2.75"}, "status": "confirmed"},
-    {"beersaver": "Zealandia IPA", "untappd_id": 5395340, "menu_name": "Zealandia IPA", "brewery": "Basic City Beer Co", "abv": "5.0", "prices": {"16oz": "7.00", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed", "note": "Not yet a Beer Saver beverage. DB 4 is wrongly set to 'Untitled Art New Zealand Lager'."},
+    {"beersaver": "Zealandia IPA", "untappd_id": 5395340, "menu_name": "Zealandia IPA", "brewery": "Basic City Beer Co", "abv": "5.0", "prices": {"16oz": "7.00", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed", "note": "Created in Beer Saver Nov 12, 2026; on DB 4 from Nov 8 11:02 AM. Toast buttons relinked to it."},
     {"beersaver": "Untitled Art New Zealand Lager", "untappd_id": 5480778, "menu_name": "Guest Tap! - New Zealand Style Lager", "brewery": "Untitled Art", "abv": "5.5", "status": "likely"},
     {"beersaver": "Waynesbeeroh", "untappd_id": 1885304, "menu_name": "Waynesbeeroh", "brewery": "Basic City Beer Co", "abv": "4.7", "status": "likely"},
     {"beersaver": "Basic Ought", "untappd_id": 3583214, "menu_name": "Basic Ought", "brewery": "Basic City Beer Co", "abv": "5.4", "status": "likely"},
