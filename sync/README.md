@@ -18,6 +18,9 @@ Toast can't be automated: as far as we know, Toast doesn't let outside tools cre
 
 ## Install (on a Mac that stays on near the printer)
 
+➡️ **Step-by-step for the Mac mini: [INSTALL-Mac-mini.md](INSTALL-Mac-mini.md)**. The short version follows.
+
+
 1. Store the credentials in the Keychain (not in this repo):
    ```bash
    security add-generic-password -s beersaver-api-user -a "$USER" -w   # paste <ClientID>-<username>

@@ -84,9 +84,10 @@ def read_taps():
 
 
 def diff(old, new):
+    """Taps whose BEER changed (or that are new). A retap of the same beer only moves
+    ConnectTime; it changes nothing on the menu, so it is not reported."""
     prev = {t["meter"]: t for t in old}
-    return [t for t in new if t["meter"] not in prev
-            or (prev[t["meter"]]["beer"], prev[t["meter"]]["connect"]) != (t["beer"], t["connect"])]
+    return [t for t in new if t["meter"] not in prev or prev[t["meter"]]["beer"] != t["beer"]]
 
 
 def untappd_sync(changes, beers, meta, live):
@@ -176,6 +177,8 @@ def main():
     print(f"{datetime.datetime.now():%Y-%m-%d %H:%M} {len(taps)} taps, {len(changes)} changed"
           f"{'' if a.live else ' (DRY RUN)'}")
     if not changes:
+        if a.live:
+            STATE.write_text(json.dumps(taps, indent=1))  # keep keg levels/retap times current
         return
     for t in changes:
         print(f"  {t['bar']} {t['tap']:5} {t['beer']}  (changed {t['connect']}, {t['pct']}% left)")
