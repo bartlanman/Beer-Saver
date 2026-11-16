@@ -1,6 +1,6 @@
 # Install the tap sync on the Mac mini
 
-**What it does once installed:** every 5 minutes the Mac mini checks Beer Saver. When a tap gets a **different beer**, it updates the Untappd "Beer on Tap!" menu and prints a fresh tap menu on the Kyocera. A retap of the same beer changes nothing on the menu, so it's ignored.
+**What it does once installed:** every 5 minutes the Mac mini checks Beer Saver. When a tap gets a **different beer**, it updates the Untappd "Beer on Tap!" menu and prints **10 copies** of a fresh tap menu on the Kyocera. A retap of the same beer changes nothing on the menu, so it's ignored.
 
 **Time:** about 30 minutes. **Where:** at the Mac mini (BARTs-Mini-2), logged in as you, on the office Wi-Fi (BCBC Private).
 
@@ -23,7 +23,8 @@ lpstat -p
 - **python3:** you should see `Python 3.x`. If macOS offers to install "command line developer tools", click **Install**, wait, then run it again.
 - **Chrome OK:** Chrome turns the menu into a PDF. If it's missing, install Chrome from google.com/chrome.
 - **lpstat -p:** lists your printers. Find the Kyocera line, e.g. `printer TaskAlfa_3552ci is idle`, and **write down the name** (here `TaskAlfa_3552ci`). It's used in Steps 4–5.
-  - No Kyocera listed? Add it: System Settings → Printers & Scanners → Add Printer → **IP** tab → `192.168.2.51`, protocol **IPP** → Add. Then run `lpstat -p` again.
+  - No Kyocera listed? Add it: System Settings → Printers & Scanners → Add Printer → **IP** tab → `192.168.2.126`, protocol **IPP** → Add. Then run `lpstat -p` again.
+  - Listed but pointing at the old `192.168.2.51`? That address stopped working on 2026-11-15. Delete that printer and re-add it at `192.168.2.126`.
 
 ## Step 2: Download the sync (1 min)
 
@@ -89,10 +90,10 @@ Check the names, breweries, ABV and prices.
 Replace `TaskAlfa_3552ci` with the name from Step 1 if yours differs.
 
 ```bash
-cd ~/BeerSaver && MENU_PRINTER=TaskAlfa_3552ci python3 tap_sync.py --live --force --no-untappd
+cd ~/BeerSaver && MENU_PRINTER=TaskAlfa_3552ci MENU_COPIES=1 python3 tap_sync.py --live --force --no-untappd
 ```
 
-A tap menu should come out of the Kyocera. `--no-untappd` keeps Untappd untouched during this test.
+A tap menu should come out of the Kyocera (`MENU_COPIES=1` keeps the test to one sheet; the live sync prints 10). `--no-untappd` keeps Untappd untouched during this test.
 
 ## Step 6: Turn it on, every 5 minutes (3 min)
 
@@ -133,7 +134,7 @@ System Settings → **Energy** (or Energy Saver) → turn on **"Prevent automati
 
 Next time a **different beer** goes on a Taproom tap, update **ON TAP** in Beer Saver as usual. Within about 5 minutes:
 - Untappd shows the new beer on that tap, with prices from `beer-map.json`.
-- A fresh menu prints on the Kyocera.
+- 10 fresh menus print on the Kyocera.
 
 A brand-new beer that isn't in `beer-map.json` still prints on the menu under its Beer Saver name, but Untappd skips it. The log then shows `TO DO`: add it to the map (ask Claude), add its Toast buttons, and link them in Beer Saver → LINKING.
 
@@ -146,7 +147,9 @@ A brand-new beer that isn't in `beer-map.json` still prints on the menu under it
 | See what it's been doing | `tail -n 30 ~/BeerSaver/tap-sync.log` |
 | Pause it | `launchctl bootout gui/$(id -u)/com.basiccity.tapsync` |
 | Start it again | `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.basiccity.tapsync.plist` |
-| Reprint the menu now | `cd ~/BeerSaver && MENU_PRINTER=TaskAlfa_3552ci python3 tap_sync.py --live --force --no-untappd` |
+| Reprint the menu now (10 copies) | `cd ~/BeerSaver && MENU_PRINTER=TaskAlfa_3552ci python3 tap_sync.py --live --force --no-untappd` |
+| Reprint just one | same, with `MENU_COPIES=1` before `python3` |
+| Change how many print per changeover | in `~/Library/LaunchAgents/com.basiccity.tapsync.plist`, add `<key>MENU_COPIES</key><string>12</string>` inside `EnvironmentVariables`, then Pause and Start it again |
 | Get the latest script and beer list | `cd ~/BeerSaver && curl -fsSLO https://raw.githubusercontent.com/bartlanman/Beer-Saver/main/sync/tap_sync.py && curl -fsSLO https://raw.githubusercontent.com/bartlanman/Beer-Saver/main/sync/beer-map.json` |
 | Update a password or token | the Step 3 command with `-U` before `-w` |
 
@@ -155,4 +158,4 @@ A brand-new beer that isn't in `beer-map.json` still prints on the menu under it
 - **Beer Saver is the master list.** Whatever ON TAP says goes onto Untappd and the printed menu, so keep ON TAP right.
 - **Foundry taps** print on the menu but aren't on Untappd (no Foundry menu there yet).
 - **The Beer Saver API login is shared** with the Profit Signals integration. If its password changes, update the Keychain (Step 3 with `-U`) or the sync stops. The log shows `403`.
-- **The printer is on Wi-Fi** and can drop off now and then. A missed print waits in the Mac's print queue and goes out when the printer is back.
+- **The printer is wired** at `192.168.2.126` (fixed IP, since 2026-11-15). If it's ever unreachable, a missed print waits in the Mac's print queue and goes out when the printer is back.

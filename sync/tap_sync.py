@@ -21,6 +21,7 @@ Environment:
   UNTAPPD_EMAIL     Untappd for Business login email
   UNTAPPD_TOKEN     Untappd for Business read/write API token (Account > API)
   MENU_PRINTER      CUPS printer name (see `lpstat -p`); optional
+  MENU_COPIES       copies printed per menu change; default 10
   CHROME            path to Chrome for HTML->PDF; optional (macOS default used)
 
 UNTESTED against the live Untappd API; run without --live first and check output.
@@ -191,8 +192,9 @@ def main():
     print(f"  Menu: {menu}")
     printer = os.environ.get("MENU_PRINTER")
     if a.live and printer and menu.suffix == ".pdf":
-        subprocess.run(["lp", "-d", printer, str(menu)], check=False)
-        print(f"  Sent to printer {printer}")
+        copies = os.environ.get("MENU_COPIES", "10")
+        subprocess.run(["lp", "-d", printer, "-n", copies, str(menu)], check=False)
+        print(f"  Sent {copies} copies to printer {printer}")
 
     new_beers = sorted({t["beer"] for t in changes if t["beer"] not in beers and t["beer"] != "*EMPTY"}
                        | {t["beer"] for _, t, _, _ in unmapped})
