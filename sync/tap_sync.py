@@ -404,6 +404,16 @@ def foundry_screen(meta, live, force=False):
     if png:
         stamp.write_text(digest)
         print(f"  Foundry screen image: {png}")
+    # Paper menus for the Foundry: letter table tents + 11x17 landscape boards
+    printer = os.environ.get("MENU_PRINTER")
+    if printer:
+        tent, poster = foundry_board.render_prints(sections, out)
+        jobs = ((tent, os.environ.get("FOUNDRY_TENT_COPIES", "12"), ["-o", "media=Letter"], "letter table tents"),
+                (poster, os.environ.get("FOUNDRY_POSTER_COPIES", "10"), ["-o", "media=Tabloid", "-o", "fit-to-page"], "11x17 menus"))
+        for pdf, n, opts, what in jobs:
+            if pdf and int(n) > 0:
+                subprocess.run(["lp", "-d", printer, "-n", n, *opts, str(pdf)], check=False)
+                print(f"  Sent {n} Foundry {what} to {printer}")
     return png
 
 
