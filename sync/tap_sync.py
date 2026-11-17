@@ -91,47 +91,53 @@ def diff(old, new):
     return [t for t in new if t["meter"] not in prev or prev[t["meter"]]["beer"] != t["beer"]]
 
 
-def untappd_sync(changes, beers, meta, live):
-    """Make the Untappd tap menu match Beer Saver for the Taproom taps that changed."""
+def untappd_sync(taps, beers, meta, live):
+    """Make the Untappd tap menu hold exactly the beers on the Taproom taps.
+
+    Matches by Untappd beer id, not tap number (our Untappd items have no tap
+    numbers). Adds mapped beers that are missing; removes menu beers that are in
+    beer-map.json but no longer on any Taproom tap. Never touches a menu item
+    whose beer isn't in beer-map.json."""
     email, token = secret("UNTAPPD_EMAIL", "untappd-email"), secret("UNTAPPD_TOKEN", "untappd-token")
     sec = meta["untappd_tap_section_id"]
     items = http("GET", f"{UT_API}/sections/{sec}/items", email, token).get("items", [])
-    by_tap = {str(i.get("tap_number") or "").strip(): i for i in items}
-    todo = []
-    for t in changes:
-        if t["bar"] != "1 Taproom":
-            continue  # Foundry taps are not on the Untappd menu
-        cur, want = by_tap.get(t["tap"]), beers.get(t["beer"])
-        if t["beer"] == "*EMPTY":
-            if cur:
-                todo.append(("remove", t, cur, None))
-            continue
-        if not want or not want.get("untappd_id"):
-            todo.append(("unmapped", t, cur, None))
-            continue
-        if cur and cur.get("untappd_id") == want["untappd_id"]:
-            continue  # same beer (retap) - nothing to change on Untappd
-        todo.append(("replace" if cur else "add", t, cur, want))
+    on_menu = {i.get("untappd_id"): i for i in items}
+    known = {b["untappd_id"] for b in beers.values() if b.get("untappd_id")}
 
-    for action, t, cur, want in todo:
-        print(f"  Untappd {action:8} tap {t['tap']:5} {(cur or {}).get('name', '-')!s:35} -> {t['beer']}")
-        if not live or action == "unmapped":
+    want, unmapped = {}, []
+    for t in taps:
+        if t["bar"] != "1 Taproom" or t["beer"] == "*EMPTY":
+            continue  # Foundry taps are not on the Untappd menu
+        b = beers.get(t["beer"])
+        if not b or not b.get("untappd_id"):
+            unmapped.append(("unmapped", t, None, None))
+            print(f"  Untappd unmapped tap {t['tap']:5} {t['beer']} (not in beer-map.json; left alone)")
             continue
-        if cur:
-            http("DELETE", f"{UT_API}/items/{cur['id']}", email, token)
-        if want:
-            res = http("POST", f"{UT_API}/sections/{sec}/items", email, token,
-                       {"untappd_id": want["untappd_id"]})
-            item = res.get("item") or (res.get("items") or [None])[0]
-            body = {"tap_number": t["tap"]}
-            if want.get("menu_name"):
-                body["name"] = want["menu_name"]
-            http("PATCH", f"{UT_API}/items/{item['id']}", email, token, {"item": body})
-            sizes = meta["untappd_container_size_ids"]
-            for size, price in (want.get("prices") or meta["default_prices"]).items():
-                http("POST", f"{UT_API}/items/{item['id']}/containers", email, token,
-                     {"container": {"container_size_id": sizes[size], "price": float(price)}})
-    return [x for x in todo if x[0] == "unmapped"]
+        want.setdefault(b["untappd_id"], (t, b))
+
+    adds = [(t, b) for uid, (t, b) in want.items() if uid not in on_menu]
+    removes = [i for uid, i in on_menu.items() if uid in known and uid not in want]
+    for i in removes:
+        print(f"  Untappd remove   {i.get('name')}  (no longer on a Taproom tap)")
+    for t, b in adds:
+        print(f"  Untappd add      {b.get('menu_name') or t['beer']}  (tap {t['tap']})")
+    if not adds and not removes:
+        print("  Untappd: already matches the Taproom taps")
+    if not live:
+        return unmapped
+
+    for i in removes:
+        http("DELETE", f"{UT_API}/items/{i['id']}", email, token)
+    sizes = meta["untappd_container_size_ids"]
+    for t, b in adds:
+        res = http("POST", f"{UT_API}/sections/{sec}/items", email, token, {"untappd_id": b["untappd_id"]})
+        item = res.get("item") or (res.get("items") or [None])[0]
+        if b.get("menu_name"):
+            http("PATCH", f"{UT_API}/items/{item['id']}", email, token, {"item": {"name": b["menu_name"]}})
+        for size, price in (b.get("prices") or meta["default_prices"]).items():
+            http("POST", f"{UT_API}/items/{item['id']}/containers", email, token,
+                 {"container": {"container_size_id": sizes[size], "price": float(price)}})
+    return unmapped
 
 
 def render_menu(taps, beers, meta=None):
@@ -211,7 +217,7 @@ def main():
     first_run = not old and not a.force
     if first_run:
         print("  First run: recording the current taps as the starting point; Untappd left as is.")
-    unmapped = [] if (a.no_untappd or first_run) else untappd_sync(changes, beers, meta, a.live)
+    unmapped = [] if (a.no_untappd or first_run) else untappd_sync(taps, beers, meta, a.live)
     menu = render_menu(taps, beers, meta)
     print(f"  Menu: {menu}")
     printer = os.environ.get("MENU_PRINTER")
