@@ -5,7 +5,7 @@ Staff change kegs in **Beer Saver → ON TAP** only. Every few minutes `tap_sync
 1. reads the tap list from the Beer Saver API (`/1392/Inventory`),
 2. spots taps whose beer or keg-change time changed,
 3. updates the Untappd **Beer on Tap!** menu for Taproom taps (Foundry taps aren't on Untappd),
-4. writes `~/Desktop/Tap Menu/tap-menu.pdf` and sends it to the bar printer,
+4. writes `~/BeerSaver/Tap Menu/tap-menu.pdf` (next to the script; macOS blocks background jobs from writing to the Desktop) and sends it to the bar printer,
 5. lists manual to-dos for brand-new beers: add to `beer-map.json`, add Toast buttons, link them in Beer Saver.
 
 Toast can't be automated: as far as we know, Toast doesn't let outside tools create menu buttons for a regular restaurant account. New beers get a to-do instead.

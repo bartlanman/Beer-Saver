@@ -34,7 +34,7 @@ BRANCH_ID = 1392
 BS_API = f"https://api.usbeersaver.com/api/{BRANCH_ID}"
 UT_API = "https://business.untappd.com/api/v1"
 STATE = Path(os.environ.get("TAP_SYNC_STATE", Path.home() / ".beersaver-tap-state.json"))
-OUT = Path(os.environ.get("TAP_SYNC_OUT", Path.home() / "Desktop" / "Tap Menu"))
+OUT = Path(os.environ.get("TAP_SYNC_OUT", HERE / "Tap Menu"))  # not ~/Desktop: macOS blocks background jobs there
 LEARNED = Path(os.environ.get("TAP_SYNC_LEARNED", HERE / "learned-beers.json"))  # beers found automatically
 CHROME = os.environ.get("CHROME", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 

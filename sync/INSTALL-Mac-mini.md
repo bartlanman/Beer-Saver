@@ -81,7 +81,7 @@ Check what it prints:
 
 Open the menu it made:
 ```bash
-open ~/Desktop/"Tap Menu"/tap-menu.pdf
+open ~/BeerSaver/"Tap Menu"/tap-menu.pdf
 ```
 Check the names, breweries, ABV and prices.
 
