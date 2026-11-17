@@ -388,5 +388,32 @@
   "address": "1010 E Main St, Waynesboro, Virginia, 22980",
   "note": "BEER PRICES DO NOT INCLUDE TAX",
   "logo_url": "https://utfb-images.untappd.com/logos/ea4483cefacb150953e74a94e86357f7a709cbc0.png?auto=compress%2Cformat&fit=clip&h=300&q=90&w=600"
- }
+ },
+ "price_tiers": [
+  {
+   "max_abv": 7.5,
+   "prices": {
+    "16oz": "7.00",
+    "8oz": "3.50",
+    "4oz": "2.25"
+   }
+  },
+  {
+   "max_abv": 8.5,
+   "prices": {
+    "16oz": "8.00",
+    "8oz": "4.50",
+    "4oz": "2.25"
+   }
+  },
+  {
+   "max_abv": 99,
+   "prices": {
+    "16oz": "9.00",
+    "8oz": "5.00",
+    "4oz": "2.75"
+   }
+  }
+ ],
+ "_about_price_tiers": "Prices for a new beer found automatically on Untappd (not on our Untappd menu yet): the first tier whose max_abv is above the beer's ABV."
 }

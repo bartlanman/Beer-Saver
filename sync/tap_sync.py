@@ -26,7 +26,7 @@ Environment:
 
 UNTESTED against the live Untappd API; run without --live first and check output.
 """
-import argparse, base64, datetime, html, json, os, subprocess, sys, urllib.request
+import argparse, base64, datetime, difflib, html, json, os, re, subprocess, sys, urllib.parse, urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -35,6 +35,7 @@ BS_API = f"https://api.usbeersaver.com/api/{BRANCH_ID}"
 UT_API = "https://business.untappd.com/api/v1"
 STATE = Path(os.environ.get("TAP_SYNC_STATE", Path.home() / ".beersaver-tap-state.json"))
 OUT = Path(os.environ.get("TAP_SYNC_OUT", Path.home() / "Desktop" / "Tap Menu"))
+LEARNED = Path(os.environ.get("TAP_SYNC_LEARNED", HERE / "learned-beers.json"))  # beers found automatically
 CHROME = os.environ.get("CHROME", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 
 
@@ -70,7 +71,122 @@ def tap_label(description):
 
 def load_map():
     m = json.loads((HERE / "beer-map.json").read_text())
-    return m, {b["beersaver"]: b for b in m["beers"]}
+    beers = {}
+    if LEARNED.exists():  # found automatically on earlier runs; beer-map.json wins
+        beers.update({b["beersaver"]: b for b in json.loads(LEARNED.read_text())})
+    beers.update({b["beersaver"]: b for b in m["beers"]})
+    return m, beers
+
+
+def _norm(text):
+    text = re.sub(r"[^a-z0-9 ]", " ", (text or "").lower().replace("\u2019", "'").replace("'", ""))
+    return " ".join(w for w in text.split() if w not in {"the", "beer", "co", "company"})
+
+
+def _short_brewery(name):
+    drop = {"brewing", "brewery", "company", "co", "co.", "beer", "brewers", "ales", "craft", "llc"}
+    return " ".join(w for w in (name or "").split() if w.lower().strip(",.") not in drop) or name
+
+
+def price_for(abv, meta):
+    """Price a new beer by ABV using meta['price_tiers'] (first tier whose max_abv it's under)."""
+    try:
+        abv = float(abv)
+    except (TypeError, ValueError):
+        abv = 0.0
+    for tier in meta.get("price_tiers", []):
+        if abv < tier.get("max_abv", 999):
+            return dict(tier["prices"])
+    return dict(meta["default_prices"])
+
+
+def _beer_from_untappd(name, item, meta, prices=None):
+    house = "basic city" in (item.get("brewery") or "").lower()
+    menu_name = item.get("name") if house or (item.get("name") or "").startswith("Guest Tap!") \
+        else f"Guest Tap! - {_short_brewery(item.get('brewery'))} {item.get('name')}"
+    return {"beersaver": name, "untappd_id": item["untappd_id"], "menu_name": menu_name,
+            "brewery": item.get("brewery") or "", "abv": item.get("abv") or "",
+            "style": item.get("short_style") or item.get("style") or "",
+            "location": item.get("brewery_location") or "",
+            "description": " ".join((item.get("description") or "").split()),
+            "prices": prices or price_for(item.get("abv"), meta),
+            "status": "auto", "found": datetime.date.today().isoformat()}
+
+
+def _match(query, item):
+    """(acceptable, score). Acceptable only if every word of the Beer Saver name is in the
+    Untappd name (with or without brewery), or the names are nearly identical."""
+    q = _norm(query)
+    names = [_norm(item.get("name")), _norm(f"{item.get('brewery')} {item.get('name')}"),
+             _norm(f"{_short_brewery(item.get('brewery'))} {item.get('name')}")]
+    ratio = max(difflib.SequenceMatcher(None, q, n).ratio() for n in names)
+    contains = set(q.split()) <= set(" ".join(names).split())
+    house = "basic city" in (item.get("brewery") or "").lower()
+    score = ratio + (0.2 if contains else 0) + ((0.35 if contains else 0.1) if house else 0)
+    return (contains or ratio >= 0.9), score
+
+
+def lookup_new_beers(taps, beers, meta, live=True):
+    """Give every beer on a Taproom tap full menu details before anything prints.
+
+    Beers missing from beer-map.json / learned-beers.json are looked up on Untappd:
+    first on our own Untappd tap menu (keeps its prices), then in the Untappd beer
+    database (priced by ABV). Results are saved to learned-beers.json."""
+    new = sorted({t["beer"] for t in taps if t["bar"] == "1 Taproom" and t["beer"] != "*EMPTY"
+                  and not (beers.get(t["beer"]) or {}).get("untappd_id")})
+    if not new:
+        return []
+    try:
+        email, token = secret("UNTAPPD_EMAIL", "untappd-email"), secret("UNTAPPD_TOKEN", "untappd-token")
+        menu = http("GET", f"{UT_API}/sections/{meta['untappd_tap_section_id']}/items", email, token).get("items", [])
+    except Exception as e:
+        print(f"  Lookup skipped (Untappd unreachable: {e})")
+        return new
+    learned = json.loads(LEARNED.read_text()) if LEARNED.exists() else []
+    missing = []
+    for name in new:
+        found = None
+        on_menu = max((i for i in menu if _match(name, i)[0]), key=lambda i: _match(name, i)[1], default=None)
+        if on_menu:
+            prices = {c["container_size"]["name"]: c["price"] for c in on_menu.get("containers") or []
+                      if c.get("container_size", {}).get("name") in ("16oz", "8oz", "4oz")}
+            if not prices:
+                prices = {c["container_size"]["name"]: c["price"] for c in
+                          http("GET", f"{UT_API}/items/{on_menu['id']}/containers", email, token).get("containers", [])
+                          if c.get("container_size", {}).get("name") in ("16oz", "8oz", "4oz")}
+            found, how = _beer_from_untappd(name, on_menu, meta, prices or None), "from the Untappd menu"
+        else:
+            results = []
+            for q in (f"Basic City {name}", name):
+                try:
+                    results += http("GET", f"{UT_API}/items/search?q={urllib.parse.quote(q)}", email, token).get("items", [])
+                except Exception:
+                    pass
+            pool = [r for r in {r["untappd_id"]: r for r in results if r.get("untappd_id")}.values()
+                    if _match(name, r)[0]]
+            house = [r for r in pool if "basic city" in (r.get("brewery") or "").lower()]
+            if len(house) > 1:  # e.g. plain "Tart Up": several of our releases fit - take the newest
+                pick, how = max(house, key=lambda r: r["untappd_id"]), \
+                    f"from an Untappd search, priced by ABV - CHECK: {len(house)} Basic City beers fit, took the newest"
+            elif pool:
+                pick = max(pool, key=lambda r: (_match(name, r)[1], r.get("rating_count") or 0))
+                how = "from an Untappd search, priced by ABV"
+            else:
+                pick = None
+            if pick:
+                found = _beer_from_untappd(name, pick, meta)
+        if found:
+            beers[name] = found
+            learned = [b for b in learned if b["beersaver"] != name] + [found]
+            p = found["prices"]
+            print(f"  NEW BEER '{name}' -> {found['menu_name']} ({found['abv']}%, "
+                  f"${p.get('16oz')}/${p.get('8oz')}/${p.get('4oz')}) {how}")
+        else:
+            missing.append(name)
+            print(f"  NEW BEER '{name}': no Untappd match - prints with its Beer Saver name only")
+    if live:
+        LEARNED.write_text(json.dumps(learned, indent=1, ensure_ascii=False))
+    return missing
 
 
 def read_taps():
@@ -214,6 +330,8 @@ def main():
     for t in changes:
         print(f"  {t['bar']} {t['tap']:5} {t['beer']}  (changed {t['connect']}, {t['pct']}% left)")
 
+    missing = lookup_new_beers(taps, beers, meta, a.live)  # before anything prints or goes to Untappd
+
     first_run = not old and not a.force
     if first_run:
         print("  First run: recording the current taps as the starting point; Untappd left as is.")
@@ -226,13 +344,11 @@ def main():
         subprocess.run(["lp", "-d", printer, "-n", copies, str(menu)], check=False)
         print(f"  Sent {copies} copies to printer {printer}")
 
-    new_beers = sorted({t["beer"] for t in changes if t["beer"] not in beers and t["beer"] != "*EMPTY"}
-                       | {t["beer"] for _, t, _, _ in unmapped})
-    if new_beers:
-        print("  TO DO (manual):")
-        for b in new_beers:
-            print(f"   - '{b}': add to sync/beer-map.json; add its draft buttons in Toast; "
-                  f"link them in Beer Saver > LINKING (buttons appear there within ~90 min)")
+    fresh = sorted({t["beer"] for t in changes if (beers.get(t["beer"]) or {}).get("status") == "auto"
+                    and beers[t["beer"]].get("found") == datetime.date.today().isoformat()} | set(missing))
+    if fresh:
+        print("  TO DO (manual): add draft buttons in Toast, then link them in Beer Saver > LINKING "
+              "(buttons appear there within ~90 min) for: " + ", ".join(fresh))
     if a.live or not old:
         STATE.write_text(json.dumps(taps, indent=1))
 
