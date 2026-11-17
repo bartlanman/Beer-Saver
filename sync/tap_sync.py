@@ -287,7 +287,7 @@ def render_menu(taps, beers, meta=None):
 @page{{size:letter;margin:.45in}}html,body{{margin:0}}
 body{{font-family:"Fira Sans","Avenir Next","Helvetica Neue",Arial,sans-serif;color:#111;height:9.95in;display:flex;flex-direction:column}}
 .box{{border:2.5px solid #111}}.hd{{display:flex;justify-content:space-between;align-items:center;padding:14pt 14pt 12pt;border-bottom:2.5px solid #111}}
-h1{{margin:0;font-size:20pt;letter-spacing:.5pt}}.sub{{font-size:12pt}}.logo{{height:44pt;max-width:120pt;object-fit:contain;font-weight:bold;letter-spacing:2pt}}
+h1{{margin:0;font-size:20pt;letter-spacing:.5pt}}.sub{{font-size:12pt}}.logo{{height:44pt;max-width:120pt;object-fit:contain;font-weight:bold;letter-spacing:2pt;filter:grayscale(1) brightness(1.25) contrast(1.8)}}
 .cols{{display:grid;grid-template-columns:1fr 1fr;font-size:10pt}}.col{{padding:10pt 14pt 6pt}}.col+.col{{border-left:2.5px solid #111}}
 h2{{font-size:1.6em;margin:0 0 .5em}}.beer{{margin:0 0 .8em;break-inside:avoid}}.nm{{font-weight:600;font-size:1.25em}}
 .st{{font-size:1.05em}}.ds{{font-size:.9em;line-height:1.3;margin-top:.1em;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}}
