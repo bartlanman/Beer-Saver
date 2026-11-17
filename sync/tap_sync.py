@@ -134,34 +134,54 @@ def untappd_sync(changes, beers, meta, live):
     return [x for x in todo if x[0] == "unmapped"]
 
 
-def render_menu(taps, beers):
+def render_menu(taps, beers, meta=None):
+    """One letter page in the style of the Untappd 'Beer on Tap!' print menu:
+    Taproom taps only, in tap order, split into two boxed columns."""
     OUT.mkdir(parents=True, exist_ok=True)
-    rows_by_bar = {}
-    for t in sorted(taps, key=lambda x: (x["bar"], x["tap"].startswith("DB"), x["tap"].zfill(5))):
-        if t["beer"] == "*EMPTY":
-            continue
+    meta = meta or {}
+    foot = meta.get("print_footer", {})
+    esc = html.escape
+    order = lambda x: (x["tap"].startswith("DB"), x["tap"].zfill(5))
+    cards = []
+    for t in sorted((t for t in taps if t["bar"] == "1 Taproom" and t["beer"] != "*EMPTY"), key=order):
         b = beers.get(t["beer"], {})
-        p = (b.get("prices") or {}).get("16oz", "")
-        rows_by_bar.setdefault(t["bar"], []).append(
-            f"<tr><td class=n>{html.escape(t['tap'])}</td><td><b>{html.escape(b.get('menu_name') or t['beer'])}</b>"
-            f"<div class=s>{html.escape(b.get('brewery', ''))}{' · ' + b['abv'] + '%' if b.get('abv') else ''}</div></td>"
-            f"<td class=p>{'$' + p if p else ''}</td></tr>")
-    stamp = datetime.datetime.now().strftime("%a %b %-d, %-I:%M %p")
-    # One page, two columns: each bar (Taproom, Foundry) gets its own column.
-    body = "".join(f"<div class=col><h2>{html.escape(bar.split(' ', 1)[-1])}</h2><table>{''.join(r)}</table></div>"
-                   for bar, r in rows_by_bar.items())
-    page = f"""<!doctype html><meta charset=utf-8><title>On Tap</title><style>
-@page{{size:letter;margin:.5in}}html,body{{margin:0}}body{{font-family:Georgia,serif;color:#111}}
-h1{{text-align:center;margin:0;font-size:24pt}}.d{{text-align:center;font-size:9pt;color:#555;margin:2pt 0 10pt}}
-.cols{{display:grid;grid-template-columns:1fr 1fr;column-gap:22pt;align-items:start}}
-h2{{border-bottom:2px solid #111;font-size:14pt;margin:0 0 2pt;padding-bottom:2pt}}
-table{{width:100%;border-collapse:collapse;page-break-inside:avoid}}
-td{{padding:4pt 2pt;border-bottom:1px solid #ddd;font-size:11pt;vertical-align:top;line-height:1.2}}
-.n{{width:30pt;color:#555;white-space:nowrap}}.p{{text-align:right;width:38pt}}.s{{font-size:8.5pt;color:#555}}</style>
-<h1>Basic City Beer Co. · On Tap</h1><div class=d>Updated {stamp}</div><div class=cols>{body}</div>"""
+        line = " \u2022 ".join(x for x in (b.get("style"), (b["abv"].rstrip("0").rstrip(".") + "% ABV") if b.get("abv") else "",
+                                           b.get("location")) if x)
+        prices = b.get("prices") or {}
+        price = " \u00b7 ".join(f"{size} ${prices[size]}" for size in ("16oz", "8oz", "4oz") if prices.get(size))
+        cards.append(f"<div class=beer><div class=nm>{esc(b.get('menu_name') or t['beer'])}</div>"
+                     + (f"<div class=st>{esc(line)}</div>" if line else "")
+                     + (f"<div class=ds>{esc(b['description'])}</div>" if b.get("description") else "")
+                     + (f"<div class=pr>{esc(price)}</div>" if price else "") + "</div>")
+    half = (len(cards) + 1) // 2
+    cols = "".join(f"<div class=col><h2>_DRAFT</h2>{''.join(c)}</div>" for c in (cards[:half], cards[half:]))
+    logo = foot.get("logo_url")
+    logo_html = f"<img class=logo src='{esc(logo)}' alt='Basic City'>" if logo else "<div class=logo>BASIC CITY</div>"
+    today = datetime.date.today().strftime("%B %-d, %Y")
+    page = f"""<!doctype html><meta charset=utf-8><title>Beer on Tap</title><style>
+@page{{size:letter;margin:.45in}}html,body{{margin:0}}
+body{{font-family:"Fira Sans","Avenir Next","Helvetica Neue",Arial,sans-serif;color:#111;height:9.95in;display:flex;flex-direction:column}}
+.box{{border:2.5px solid #111}}.hd{{display:flex;justify-content:space-between;align-items:center;padding:14pt 14pt 12pt;border-bottom:2.5px solid #111}}
+h1{{margin:0;font-size:20pt;letter-spacing:.5pt}}.sub{{font-size:12pt}}.logo{{height:44pt;max-width:120pt;object-fit:contain;font-weight:bold;letter-spacing:2pt}}
+.cols{{display:grid;grid-template-columns:1fr 1fr;font-size:10pt}}.col{{padding:10pt 14pt 6pt}}.col+.col{{border-left:2.5px solid #111}}
+h2{{font-size:1.6em;margin:0 0 .5em}}.beer{{margin:0 0 .8em;break-inside:avoid}}.nm{{font-weight:600;font-size:1.25em}}
+.st{{font-size:1.05em}}.ds{{font-size:.9em;line-height:1.3;margin-top:.1em;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}}
+.pr{{font-weight:700;font-style:italic;font-size:1.05em;margin-top:.2em}}
+.ft{{margin-top:auto;display:grid;grid-template-columns:1fr 1.3fr 1fr;align-items:end;font-size:10pt}}
+.ft .c{{text-align:center;padding:0 10pt}}.ft .c .tax{{display:inline-block;border-bottom:2.5px solid #111;padding-bottom:6pt;margin-bottom:6pt}}.ft .r{{text-align:right}}
+</style>
+<div class=box><div class=hd><div><h1>{esc(meta.get("menu_title", "BEER ON TAP!"))}</h1><div class=sub>{esc(meta.get("menu_subtitle", "Draft"))}</div></div>{logo_html}</div>
+<div class=cols>{cols}</div></div>
+<div class=ft><div>{esc(foot.get("phone", ""))} \u2022 {esc(foot.get("website", ""))}</div>
+<div class=c><div class=tax>{esc(foot.get("note", ""))}</div><br>{today} \u2022 Subscribe to us on Untappd</div>
+<div class=r>{esc(foot.get("address", ""))}</div></div>
+<script>/* shrink the beer text until the box clears the footer: always one page */
+var c=document.querySelector('.cols'),b=document.querySelector('.box'),f=document.querySelector('.ft'),s=10;
+while(s>6&&b.getBoundingClientRect().bottom>f.getBoundingClientRect().top-12){{s-=.25;c.style.fontSize=s+'pt';}}</script>"""
     html_path = OUT / "tap-menu.html"
     html_path.write_text(page)
     pdf_path = OUT / "tap-menu.pdf"
+    pdf_path.unlink(missing_ok=True)  # never print a stale menu if Chrome fails
     if Path(CHROME).exists():
         subprocess.run([CHROME, "--headless", "--disable-gpu", "--no-pdf-header-footer",
                         f"--print-to-pdf={pdf_path}", html_path.as_uri()], capture_output=True)
@@ -192,7 +212,7 @@ def main():
     if first_run:
         print("  First run: recording the current taps as the starting point; Untappd left as is.")
     unmapped = [] if (a.no_untappd or first_run) else untappd_sync(changes, beers, meta, a.live)
-    menu = render_menu(taps, beers)
+    menu = render_menu(taps, beers, meta)
     print(f"  Menu: {menu}")
     printer = os.environ.get("MENU_PRINTER")
     if a.live and printer and menu.suffix == ".pdf":
