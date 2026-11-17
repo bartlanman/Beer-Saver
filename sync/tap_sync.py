@@ -253,6 +253,9 @@ def untappd_sync(taps, beers, meta, live):
         for size, price in (b.get("prices") or meta["default_prices"]).items():
             http("POST", f"{UT_API}/items/{item['id']}/containers", email, token,
                  {"container": {"container_size_id": sizes[size], "price": float(price)}})
+    if removes or adds:  # edits stay a draft until published; screens and the app show the published menu
+        http("POST", f"{UT_API}/menus/{meta['untappd_tap_menu_id']}/publish", email, token)
+        print("  Untappd menu published")
     return unmapped
 
 
