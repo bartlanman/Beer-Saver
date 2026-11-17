@@ -140,6 +140,30 @@ A brand-new beer that isn't in `beer-map.json` still prints on the menu under it
 
 ---
 
+## 11x17 printer (for the Foundry 11x17 menus)
+
+The "Kyocera" queue uses Generic PostScript, which has no 11x17 size, so 11x17 jobs come out on letter.
+Add a second queue on the same printer with Tabloid added to its PPD (11x17 paper is in Cassettes 3 and 4):
+
+```bash
+python3 - <<'PY'
+import pathlib
+src = pathlib.Path("/etc/cups/ppd/Kyocera.ppd").read_text(errors="ignore")
+size = '"<</PageSize[792 1224]/ImagingBBox null>>setpagedevice"'
+adds = {"*PageSize Letter:": f'*PageSize Tabloid/11x17: {size}',
+        "*PageRegion Letter:": f'*PageRegion Tabloid/11x17: {size}',
+        "*ImageableArea Letter:": '*ImageableArea Tabloid/11x17: "18 18 774 1206"',
+        "*PaperDimension Letter:": '*PaperDimension Tabloid/11x17: "792 1224"'}
+out = []
+for line in src.splitlines():
+    out.append(line)
+    out += [new for key, new in adds.items() if line.startswith(key.split(":")[0]) and line.split("/")[0].split(":")[0].endswith("Letter")]
+(pathlib.Path.home() / "BeerSaver/Kyocera-11x17.ppd").write_text("\n".join(out) + "\n")
+PY
+lpadmin -p Kyocera_11x17 -E -v socket://192.168.2.126:9100 -P ~/BeerSaver/Kyocera-11x17.ppd -o PageSize=Tabloid -D "Kyocera 11x17"
+```
+Test: `lp -d Kyocera_11x17 -o PageSize=Tabloid -o fit-to-page somefile.pdf`. (Set up on the Mac mini 2026-11-17.)
+
 ## Everyday commands
 
 | To… | Run |

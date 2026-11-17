@@ -416,12 +416,19 @@ def foundry_screen(meta, live, force=False):
     printer = os.environ.get("MENU_PRINTER")
     if printer:
         tent, poster = foundry_board.render_prints(sections, out)
-        jobs = ((tent, os.environ.get("FOUNDRY_TENT_COPIES", "12"), ["-o", "media=Letter"], "letter table tents"),
-                (poster, os.environ.get("FOUNDRY_POSTER_COPIES", "10"), ["-o", "media=Tabloid", "-o", "fit-to-page"], "11x17 menus"))
-        for pdf, n, opts, what in jobs:
-            if pdf and int(n) > 0:
-                subprocess.run(["lp", "-d", printer, "-n", n, *opts, str(pdf)], check=False)
-                print(f"  Sent {n} Foundry {what} to {printer}")
+        # The Mac mini's "Kyocera" queue (Generic PostScript) has no 11x17 size, so 11x17s go to a second
+        # queue on the same printer whose PPD adds Tabloid (see INSTALL-Mac-mini.md, "11x17 printer").
+        tabloid = os.environ.get("FOUNDRY_POSTER_PRINTER", "Kyocera_11x17")
+        if subprocess.run(["lpstat", "-p", tabloid], capture_output=True).returncode != 0:
+            print(f"  WARNING: printer {tabloid} not found - 11x17s would print on letter; skipped")
+            tabloid = None
+        jobs = ((tent, printer, os.environ.get("FOUNDRY_TENT_COPIES", "12"), ["-o", "media=Letter"], "letter table tents"),
+                (poster, tabloid, os.environ.get("FOUNDRY_POSTER_COPIES", "10"),
+                 ["-o", "PageSize=Tabloid", "-o", "fit-to-page"], "11x17 menus"))
+        for pdf, queue, n, opts, what in jobs:
+            if pdf and queue and int(n) > 0:
+                subprocess.run(["lp", "-d", queue, "-n", n, *opts, str(pdf)], check=False)
+                print(f"  Sent {n} Foundry {what} to {queue}")
     return png
 
 
