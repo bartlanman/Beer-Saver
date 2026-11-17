@@ -374,6 +374,14 @@ def foundry_sync(taps, beers, meta, live):
         http("PATCH", f"{UT_API}/items/{item['id']}", email, token, {"item": {"name": name}})
         http("POST", f"{UT_API}/items/{item['id']}/containers", email, token,
              {"container": {"container_size_id": f["container_size_id"], "price": float(price)}})
+    if adds or removes:  # Untappd puts new items first; put both sections back in tap order
+        order = list(want)
+        for kind in ("house", "guest"):
+            items = http("GET", f"{UT_API}/sections/{f['sections'][kind]}/items", email, token).get("items", [])
+            items.sort(key=lambda i: order.index(i["untappd_id"]) if i.get("untappd_id") in order else 99)
+            for pos, i in enumerate(items):
+                if i.get("position") != pos:
+                    http("PATCH", f"{UT_API}/items/{i['id']}", email, token, {"item": {"position": pos}})
 
 
 def foundry_screen(meta, live, force=False):
