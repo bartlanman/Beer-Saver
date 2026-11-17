@@ -147,14 +147,18 @@ def render_menu(taps, beers):
             f"<div class=s>{html.escape(b.get('brewery', ''))}{' · ' + b['abv'] + '%' if b.get('abv') else ''}</div></td>"
             f"<td class=p>{'$' + p if p else ''}</td></tr>")
     stamp = datetime.datetime.now().strftime("%a %b %-d, %-I:%M %p")
-    body = "".join(f"<h2>{html.escape(bar.split(' ', 1)[-1])}</h2><table>{''.join(r)}</table>"
+    # One page, two columns: each bar (Taproom, Foundry) gets its own column.
+    body = "".join(f"<div class=col><h2>{html.escape(bar.split(' ', 1)[-1])}</h2><table>{''.join(r)}</table></div>"
                    for bar, r in rows_by_bar.items())
     page = f"""<!doctype html><meta charset=utf-8><title>On Tap</title><style>
-@page{{size:letter;margin:.5in}}body{{font-family:Georgia,serif;color:#111}}h1{{text-align:center;margin:0}}
-.d{{text-align:center;font-size:10pt;color:#555;margin-bottom:12pt}}h2{{border-bottom:2px solid #111;font-size:15pt;margin:14pt 0 4pt}}
-table{{width:100%;border-collapse:collapse}}td{{padding:5pt 4pt;border-bottom:1px solid #ddd;font-size:13pt;vertical-align:top}}
-.n{{width:42pt;color:#555}}.p{{text-align:right;width:60pt}}.s{{font-size:10pt;color:#555}}</style>
-<h1>Basic City Beer Co. · On Tap</h1><div class=d>Updated {stamp}</div>{body}"""
+@page{{size:letter;margin:.5in}}html,body{{margin:0}}body{{font-family:Georgia,serif;color:#111}}
+h1{{text-align:center;margin:0;font-size:24pt}}.d{{text-align:center;font-size:9pt;color:#555;margin:2pt 0 10pt}}
+.cols{{display:grid;grid-template-columns:1fr 1fr;column-gap:22pt;align-items:start}}
+h2{{border-bottom:2px solid #111;font-size:14pt;margin:0 0 2pt;padding-bottom:2pt}}
+table{{width:100%;border-collapse:collapse;page-break-inside:avoid}}
+td{{padding:4pt 2pt;border-bottom:1px solid #ddd;font-size:11pt;vertical-align:top;line-height:1.2}}
+.n{{width:30pt;color:#555;white-space:nowrap}}.p{{text-align:right;width:38pt}}.s{{font-size:8.5pt;color:#555}}</style>
+<h1>Basic City Beer Co. · On Tap</h1><div class=d>Updated {stamp}</div><div class=cols>{body}</div>"""
     html_path = OUT / "tap-menu.html"
     html_path.write_text(page)
     pdf_path = OUT / "tap-menu.pdf"
