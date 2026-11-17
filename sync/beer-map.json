@@ -1,39 +1,392 @@
 {
-  "_about": "Pairs each Beer Saver beverage name with its Untappd beer, so a tap change in Beer Saver can update the Untappd menu and printed menus. status: confirmed = on the live Untappd 'Beer on Tap!' menu with this Beer Saver name on the same tap (Nov 2026); likely = best Untappd match, needs Bart's OK; unknown = no match found; duplicate = a second Beer Saver beverage for the same beer.",
-  "untappd_location_id": 5784,
-  "untappd_tap_menu_id": 97291,
-  "untappd_tap_section_id": 528496,
-  "default_prices": {"16oz": "7.00", "8oz": "3.50", "4oz": "2.25"},
-  "untappd_container_size_ids": {"16oz": 602, "8oz": 346, "4oz": 721},
-  "beers": [
-    {"beersaver": "The Hornig Lager", "untappd_id": 4430477, "menu_name": "The Hornig Amber Lager", "brewery": "Basic City Beer Co", "abv": "5.4", "prices": {"16oz": "6.50", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed"},
-    {"beersaver": "Our Daily Pils", "untappd_id": 2595572, "menu_name": "Our Daily Pils", "brewery": "Basic City Beer Co", "abv": "4.7", "prices": {"16oz": "6.00", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed"},
-    {"beersaver": "The 6th Lord IPA", "untappd_id": 1799205, "menu_name": "The 6th Lord IPA", "brewery": "Basic City Beer Co", "abv": "5.3", "prices": {"16oz": "7.00", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed"},
-    {"beersaver": "Three Notch'd Blood Orange Gose", "untappd_id": 3956264, "menu_name": "Guest Tap! - Blood Orange Gose", "brewery": "Three Notch'd Brewing Company", "abv": "5.1", "prices": {"16oz": "7.00", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed"},
-    {"beersaver": "Bask", "untappd_id": 2097931, "menu_name": "Bask DIPA", "brewery": "Basic City Beer Co", "abv": "7.6", "prices": {"16oz": "8.00", "8oz": "4.50", "4oz": "2.25"}, "status": "confirmed"},
-    {"beersaver": "Tavern Ale", "untappd_id": 23868, "menu_name": "Guest Tap! - Tavern Brown Ale", "brewery": "Alewerks Brewing Company", "abv": "5.7", "prices": {"16oz": "7.00", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed", "note": "Beer Saver also has 'Tavern Brown Ale' (Foundry tap 2). Probably the same beer under two names."},
-    {"beersaver": "Tavern Brown Ale", "untappd_id": 23868, "menu_name": "Guest Tap! - Tavern Brown Ale", "brewery": "Alewerks Brewing Company", "abv": "5.7", "status": "duplicate"},
-    {"beersaver": "Mayor of Munich", "untappd_id": 4959560, "menu_name": "Mayor of Munich Oktoberfest", "brewery": "Basic City Beer Co", "abv": "5.4", "prices": {"16oz": "7.00", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed", "note": "Beer Saver has two beverages named 'Mayor of Munich'. Merge them."},
-    {"beersaver": "Baby Bask IPA", "untappd_id": 3619656, "menu_name": "Baby Bask Session IPA", "brewery": "Basic City Beer Co", "abv": "5.0", "prices": {"16oz": "7.00", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed"},
-    {"beersaver": "Golden Child Bask IPA", "untappd_id": 5972571, "menu_name": "Golden Child IPA", "brewery": "Basic City Beer Co", "abv": "6.5", "prices": {"16oz": "7.00", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed"},
-    {"beersaver": "Brujula Mexican Lager", "untappd_id": 4785815, "menu_name": "Brujula Mexican Lager", "brewery": "Basic City Beer Co", "abv": "4.7", "prices": {"16oz": "7.00", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed"},
-    {"beersaver": "Kolsch", "untappd_id": 4430474, "menu_name": "Kathedral Kolsch", "brewery": "Basic City Beer Co", "abv": "4.8", "prices": {"16oz": "7.00", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed"},
-    {"beersaver": "Cactus Garden", "untappd_id": 5770165, "menu_name": "Cactus Garden IPA", "brewery": "Basic City Beer Co", "abv": "6.7", "prices": {"16oz": "7.00", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed"},
-    {"beersaver": "Crispy Bask Lager", "untappd_id": 6175274, "menu_name": "Crispy Bask Lager", "brewery": "Basic City Beer Co", "abv": "4.5", "prices": {"16oz": "6.50", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed"},
-    {"beersaver": "Crispy Bask", "untappd_id": 6175274, "menu_name": "Crispy Bask Lager", "status": "duplicate"},
-    {"beersaver": "Falcon Smash Triple Crossing", "untappd_id": 636361, "menu_name": "Guest Tap! - Falcon Smash", "brewery": "Triple Crossing", "abv": "7.0", "prices": {"16oz": "8.00", "8oz": "5.00", "4oz": "2.75"}, "status": "confirmed"},
-    {"beersaver": "Zealandia IPA", "untappd_id": 5395340, "menu_name": "Zealandia IPA", "brewery": "Basic City Beer Co", "abv": "5.0", "prices": {"16oz": "7.00", "8oz": "3.50", "4oz": "2.25"}, "status": "confirmed", "note": "Created in Beer Saver Nov 12, 2026; on DB 4 from Nov 8 11:02 AM. Toast buttons relinked to it."},
-    {"beersaver": "Untitled Art New Zealand Lager", "untappd_id": 5480778, "menu_name": "Guest Tap! - New Zealand Style Lager", "brewery": "Untitled Art", "abv": "5.5", "status": "likely"},
-    {"beersaver": "Waynesbeeroh", "untappd_id": 1885304, "menu_name": "Waynesbeeroh", "brewery": "Basic City Beer Co", "abv": "4.7", "status": "likely"},
-    {"beersaver": "Basic Ought", "untappd_id": 3583214, "menu_name": "Basic Ought", "brewery": "Basic City Beer Co", "abv": "5.4", "status": "likely"},
-    {"beersaver": "Grin Casket Heaven Hill Bourbon", "untappd_id": 6606033, "menu_name": "Grin Casket (Heaven Hill Bourbon Barrels)", "brewery": "Basic City Beer Co", "abv": "12.0", "status": "likely"},
-    {"beersaver": "Watermelon Gose", "untappd_id": 2066935, "menu_name": "Guest Tap! - Watermelon Gose", "brewery": "Three Notch'd Brewing Company", "abv": "5.1", "status": "likely"},
-    {"beersaver": "Guinness", "untappd_id": 4473, "menu_name": "Guinness Draught", "brewery": "Guinness", "abv": "4.2", "status": "likely"},
-    {"beersaver": "Modelo Especial", "untappd_id": 6277, "menu_name": "Modelo Especial", "brewery": "Grupo Modelo", "abv": "4.4", "status": "likely"},
-    {"beersaver": "Tart Up", "untappd_id": null, "status": "unknown", "note": "Tart Up is a rotating sour with 12+ flavors on Untappd. Name each flavor in Beer Saver (e.g. 'Tart Up: Dragon Fruit') so the sync can tell them apart."},
-    {"beersaver": "Victorious IPA", "untappd_id": null, "status": "unknown", "note": "Several 'Victorious IPA's on Untappd (Victory Brewing, others). Which one?"},
-    {"beersaver": "Lady IPA", "untappd_id": null, "status": "unknown", "note": "Not found on Untappd."},
-    {"beersaver": "Basic DIPA", "untappd_id": null, "status": "unknown", "note": "No Untappd beer with this name. Same as Bask?"},
-    {"beersaver": "*EMPTY", "untappd_id": null, "status": "empty", "note": "Tap off: remove from menu."}
-  ]
+ "_about": "Pairs each Beer Saver beverage name with its Untappd beer, so a tap change in Beer Saver can update the Untappd menu and printed menus. status: confirmed = on the live Untappd 'Beer on Tap!' menu with this Beer Saver name on the same tap (Nov 2026); likely = best Untappd match, needs Bart's OK; unknown = no match found; duplicate = a second Beer Saver beverage for the same beer.",
+ "untappd_location_id": 5784,
+ "untappd_tap_menu_id": 97291,
+ "untappd_tap_section_id": 528496,
+ "default_prices": {
+  "16oz": "7.00",
+  "8oz": "3.50",
+  "4oz": "2.25"
+ },
+ "untappd_container_size_ids": {
+  "16oz": 602,
+  "8oz": 346,
+  "4oz": 721
+ },
+ "beers": [
+  {
+   "beersaver": "The Hornig Lager",
+   "untappd_id": 4430477,
+   "menu_name": "The Hornig Amber Lager",
+   "brewery": "Basic City Beer Co",
+   "abv": "5.4",
+   "prices": {
+    "16oz": "6.50",
+    "8oz": "3.50",
+    "4oz": "2.25"
+   },
+   "status": "confirmed",
+   "style": "Lager - Amber",
+   "location": "Waynesboro, VA",
+   "description": ""
+  },
+  {
+   "beersaver": "Our Daily Pils",
+   "untappd_id": 2595572,
+   "menu_name": "Our Daily Pils",
+   "brewery": "Basic City Beer Co",
+   "abv": "4.7",
+   "prices": {
+    "16oz": "6.00",
+    "8oz": "3.50",
+    "4oz": "2.25"
+   },
+   "status": "confirmed",
+   "style": "Pilsner - German",
+   "location": "Waynesboro, VA",
+   "description": "A contemporary take on the Classic German Pilsner: German Malts & Noble Hops. Unfiltered & Naturally carbonated. Crisp, light biscuit, lemon & . . . dry."
+  },
+  {
+   "beersaver": "The 6th Lord IPA",
+   "untappd_id": 1799205,
+   "menu_name": "The 6th Lord IPA",
+   "brewery": "Basic City Beer Co",
+   "abv": "5.3",
+   "prices": {
+    "16oz": "7.00",
+    "8oz": "3.50",
+    "4oz": "2.25"
+   },
+   "status": "confirmed",
+   "style": "IPA - American",
+   "location": "Waynesboro, VA",
+   "description": "Sweeter and more aromatic than a traditional West Coast IPA, our IPA toes the line between a West and East Coast IPA to appeal to any hop lover Character from Scottish Yeast & True American Hops (Citra and Falconers)"
+  },
+  {
+   "beersaver": "Three Notch'd Blood Orange Gose",
+   "untappd_id": 3956264,
+   "menu_name": "Guest Tap! - Three Notch’d Blood Orange Gose",
+   "brewery": "Three Notch'd Brewing Company",
+   "abv": "5.1",
+   "prices": {
+    "16oz": "7.00",
+    "8oz": "3.50",
+    "4oz": "2.25"
+   },
+   "status": "confirmed",
+   "style": "Sour - Fruited Gose",
+   "location": "Charlottesville, VA",
+   "description": "This refreshing, German sour wheat ale is enhanced with blood orange puree from California."
+  },
+  {
+   "beersaver": "Bask",
+   "untappd_id": 2097931,
+   "menu_name": "Bask DIPA",
+   "brewery": "Basic City Beer Co",
+   "abv": "7.6",
+   "prices": {
+    "16oz": "8.00",
+    "8oz": "4.50",
+    "4oz": "2.25"
+   },
+   "status": "confirmed",
+   "style": "DIPA - New England / Hazy",
+   "location": "Waynesboro, VA",
+   "description": "Our OG Hazy Juicy DIPA. Mosaic and Citra hops lend this beer pineapple and citrus juiciness."
+  },
+  {
+   "beersaver": "Tavern Ale",
+   "untappd_id": 23868,
+   "menu_name": "Guest Tap! - Alewerks Tavern Brown Ale",
+   "brewery": "Alewerks Brewing Company",
+   "abv": "5.7",
+   "prices": {
+    "16oz": "7.00",
+    "8oz": "3.50",
+    "4oz": "2.25"
+   },
+   "status": "confirmed",
+   "note": "Beer Saver also has 'Tavern Brown Ale' (Foundry tap 2). Probably the same beer under two names.",
+   "style": "Brown Ale - American",
+   "location": "Williamsburg, VA",
+   "description": "Complex yet mellow American Brown Ale brewed with six malt varieties."
+  },
+  {
+   "beersaver": "Tavern Brown Ale",
+   "untappd_id": 23868,
+   "menu_name": "Guest Tap! - Alewerks Tavern Brown Ale",
+   "brewery": "Alewerks Brewing Company",
+   "abv": "5.7",
+   "status": "duplicate",
+   "style": "Brown Ale - American",
+   "location": "Williamsburg, VA",
+   "description": "Complex yet mellow American Brown Ale brewed with six malt varieties."
+  },
+  {
+   "beersaver": "Mayor of Munich",
+   "untappd_id": 4959560,
+   "menu_name": "Mayor of Munich Oktoberfest",
+   "brewery": "Basic City Beer Co",
+   "abv": "5.4",
+   "prices": {
+    "16oz": "7.00",
+    "8oz": "3.50",
+    "4oz": "2.25"
+   },
+   "status": "confirmed",
+   "note": "Beer Saver has two beverages named 'Mayor of Munich'. Merge them.",
+   "style": "Festbier",
+   "location": "Waynesboro, VA",
+   "description": "Our annual Oktoberfest lager. Smooth, clean, rich & roasted"
+  },
+  {
+   "beersaver": "Baby Bask IPA",
+   "untappd_id": 3619656,
+   "menu_name": "Baby Bask Session IPA",
+   "brewery": "Basic City Beer Co",
+   "abv": "5.0",
+   "prices": {
+    "16oz": "7.00",
+    "8oz": "3.50",
+    "4oz": "2.25"
+   },
+   "status": "confirmed",
+   "style": "IPA - New England",
+   "location": "Waynesboro, VA",
+   "description": "New England style IPA dry hopped with Citra & Mosaic. Notes of Tangerine & Orange. Everything you love from BASK but in baby form"
+  },
+  {
+   "beersaver": "Golden Child Bask IPA",
+   "untappd_id": 5972571,
+   "menu_name": "Golden Child IPA",
+   "brewery": "Basic City Beer Co",
+   "abv": "6.5",
+   "prices": {
+    "16oz": "7.00",
+    "8oz": "3.50",
+    "4oz": "2.25"
+   },
+   "status": "confirmed",
+   "style": "IPA - New England",
+   "location": "Waynesboro, VA",
+   "description": "A New England IPA that’s right smack in the middle between Bask and Baby Bask coming in at 6.5%. Citra & Mosaic Hops"
+  },
+  {
+   "beersaver": "Brujula Mexican Lager",
+   "untappd_id": 4785815,
+   "menu_name": "Brujula Mexican Lager",
+   "brewery": "Basic City Beer Co",
+   "abv": "4.7",
+   "prices": {
+    "16oz": "7.00",
+    "8oz": "3.50",
+    "4oz": "2.25"
+   },
+   "status": "confirmed",
+   "style": "Lager - Mexican",
+   "location": "Waynesboro, VA",
+   "description": "Mexican-Style Lager with a squeeze of Lime, a dash of Colima Sea Salt & Corn."
+  },
+  {
+   "beersaver": "Kolsch",
+   "untappd_id": 4430474,
+   "menu_name": "Kathedral Kolsch",
+   "brewery": "Basic City Beer Co",
+   "abv": "4.8",
+   "prices": {
+    "16oz": "7.00",
+    "8oz": "3.50",
+    "4oz": "2.25"
+   },
+   "status": "confirmed",
+   "style": "Kölsch",
+   "location": "Waynesboro, VA",
+   "description": "Kölsch is a pale, crisp, top-fermented hybrid beer originating from Cologne (Köln), Germany. Balanced and clean, Smooth & crisp. Prost!"
+  },
+  {
+   "beersaver": "Cactus Garden",
+   "untappd_id": 5770165,
+   "menu_name": "Cactus Garden IPA",
+   "brewery": "Basic City Beer Co",
+   "abv": "6.7",
+   "prices": {
+    "16oz": "7.00",
+    "8oz": "3.50",
+    "4oz": "2.25"
+   },
+   "status": "confirmed",
+   "style": "IPA - American",
+   "location": "Waynesboro, VA",
+   "description": "A Unique West Coast Leaning, Yet Balanced, IPA Featuring Agave and Alora Hops. (Think 6th Lord via Jalisco.)"
+  },
+  {
+   "beersaver": "Crispy Bask Lager",
+   "untappd_id": 6175274,
+   "menu_name": "Crispy Bask Lager",
+   "brewery": "Basic City Beer Co",
+   "abv": "4.5",
+   "prices": {
+    "16oz": "6.50",
+    "8oz": "3.50",
+    "4oz": "2.25"
+   },
+   "status": "confirmed",
+   "style": "Lager - IPL (India Pale Lager)",
+   "location": "Waynesboro, VA",
+   "description": "A smooth, crisp lager brewed with Mosaic and Citra Hops to deliver that distinct BASK flavor we all know and love."
+  },
+  {
+   "beersaver": "Crispy Bask",
+   "untappd_id": 6175274,
+   "menu_name": "Crispy Bask Lager",
+   "status": "duplicate",
+   "style": "Lager - IPL (India Pale Lager)",
+   "location": "Waynesboro, VA",
+   "description": "A smooth, crisp lager brewed with Mosaic and Citra Hops to deliver that distinct BASK flavor we all know and love."
+  },
+  {
+   "beersaver": "Falcon Smash Triple Crossing",
+   "untappd_id": 636361,
+   "menu_name": "Guest Tap! - Triple Crossing Falcon Smash",
+   "brewery": "Triple Crossing",
+   "abv": "7.0",
+   "prices": {
+    "16oz": "8.00",
+    "8oz": "5.00",
+    "4oz": "2.75"
+   },
+   "status": "confirmed",
+   "style": "IPA - American",
+   "location": "Richmond, VA",
+   "description": "Our ever faithful house IPA born from both the necessity of what we had to work with, and what we had to do. Brewed with a softer grist of North American 2 Row and Malted Wheat, fermented with our expressive house ale yeast, and dry hopped with a focus on the Falconers Flight hop blend, this beer delivers on balanced hop and yeast character of brighter citrus, orange pine marmalade, and stone fruit cohesion."
+  },
+  {
+   "beersaver": "Zealandia IPA",
+   "untappd_id": 5395340,
+   "menu_name": "Zealandia IPA",
+   "brewery": "Basic City Beer Co",
+   "abv": "5.0",
+   "prices": {
+    "16oz": "7.00",
+    "8oz": "3.50",
+    "4oz": "2.25"
+   },
+   "status": "confirmed",
+   "note": "Created in Beer Saver Nov 12, 2026; on DB 4 from Nov 8 11:02 AM. Toast buttons relinked to it.",
+   "style": "IPA - New Zealand",
+   "location": "Waynesboro, VA",
+   "description": "Hopped hazy ipa"
+  },
+  {
+   "beersaver": "Gringo",
+   "untappd_id": 2451905,
+   "menu_name": "Gringo Mole Imperial Stout",
+   "brewery": "Basic City Beer Co",
+   "abv": "9.0",
+   "prices": {
+    "16oz": "9.00",
+    "8oz": "5.00",
+    "4oz": "2.75"
+   },
+   "status": "confirmed",
+   "style": "Stout - Imperial",
+   "location": "Waynesboro, VA",
+   "description": "Mexican Mole Stout - This is Grinville with an attitude. Cacao Nibs, Ugandan Vanilla, Cinnamon, Pasilla, Ancho Smoked Serrano & Habanero peppers. 2017 & 2018 Infused with chocolate, vanilla, cinnamon & habanero"
+  },
+  {
+   "beersaver": "Untitled Art New Zealand Lager",
+   "untappd_id": 5480778,
+   "menu_name": "Guest Tap! - New Zealand Style Lager",
+   "brewery": "Untitled Art",
+   "abv": "5.5",
+   "status": "likely"
+  },
+  {
+   "beersaver": "Waynesbeeroh",
+   "untappd_id": 1885304,
+   "menu_name": "Waynesbeeroh",
+   "brewery": "Basic City Beer Co",
+   "abv": "4.7",
+   "status": "likely"
+  },
+  {
+   "beersaver": "Basic Ought",
+   "untappd_id": 3583214,
+   "menu_name": "Basic Ought",
+   "brewery": "Basic City Beer Co",
+   "abv": "5.4",
+   "status": "likely"
+  },
+  {
+   "beersaver": "Grin Casket Heaven Hill Bourbon",
+   "untappd_id": 6606033,
+   "menu_name": "Grin Casket (Heaven Hill Bourbon Barrels)",
+   "brewery": "Basic City Beer Co",
+   "abv": "12.0",
+   "status": "likely"
+  },
+  {
+   "beersaver": "Watermelon Gose",
+   "untappd_id": 2066935,
+   "menu_name": "Guest Tap! - Watermelon Gose",
+   "brewery": "Three Notch'd Brewing Company",
+   "abv": "5.1",
+   "status": "likely"
+  },
+  {
+   "beersaver": "Guinness",
+   "untappd_id": 4473,
+   "menu_name": "Guinness Draught",
+   "brewery": "Guinness",
+   "abv": "4.2",
+   "status": "likely"
+  },
+  {
+   "beersaver": "Modelo Especial",
+   "untappd_id": 6277,
+   "menu_name": "Modelo Especial",
+   "brewery": "Grupo Modelo",
+   "abv": "4.4",
+   "status": "likely"
+  },
+  {
+   "beersaver": "Tart Up",
+   "untappd_id": null,
+   "status": "unknown",
+   "note": "Tart Up is a rotating sour with 12+ flavors on Untappd. Name each flavor in Beer Saver (e.g. 'Tart Up: Dragon Fruit') so the sync can tell them apart."
+  },
+  {
+   "beersaver": "Victorious IPA",
+   "untappd_id": null,
+   "status": "unknown",
+   "note": "Several 'Victorious IPA's on Untappd (Victory Brewing, others). Which one?"
+  },
+  {
+   "beersaver": "Lady IPA",
+   "untappd_id": null,
+   "status": "unknown",
+   "note": "Not found on Untappd."
+  },
+  {
+   "beersaver": "Basic DIPA",
+   "untappd_id": null,
+   "status": "unknown",
+   "note": "No Untappd beer with this name. Same as Bask?"
+  },
+  {
+   "beersaver": "*EMPTY",
+   "untappd_id": null,
+   "status": "empty",
+   "note": "Tap off: remove from menu."
+  }
+ ],
+ "menu_title": "BEER ON TAP!",
+ "menu_subtitle": "Draft",
+ "print_footer": {
+  "phone": "5409431010",
+  "website": "www.basiccitybeer.com/",
+  "address": "1010 E Main St, Waynesboro, Virginia, 22980",
+  "note": "BEER PRICES DO NOT INCLUDE TAX",
+  "logo_url": "https://utfb-images.untappd.com/logos/ea4483cefacb150953e74a94e86357f7a709cbc0.png?auto=compress%2Cformat&fit=clip&h=300&q=90&w=600"
+ }
 }
