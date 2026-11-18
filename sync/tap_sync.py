@@ -34,7 +34,7 @@ BRANCH_ID = 1392
 BS_API = f"https://api.usbeersaver.com/api/{BRANCH_ID}"
 UT_API = "https://business.untappd.com/api/v1"
 STATE = Path(os.environ.get("TAP_SYNC_STATE", Path.home() / ".beersaver-tap-state.json"))
-OUT = Path(os.environ.get("TAP_SYNC_OUT", Path.home() / "Desktop" / "Tap Menu"))
+OUT = Path(os.environ.get("TAP_SYNC_OUT", HERE / "Tap Menu"))  # not ~/Desktop: macOS blocks background jobs there
 LEARNED = Path(os.environ.get("TAP_SYNC_LEARNED", HERE / "learned-beers.json"))  # beers found automatically
 CHROME = os.environ.get("CHROME", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 
@@ -253,6 +253,9 @@ def untappd_sync(taps, beers, meta, live):
         for size, price in (b.get("prices") or meta["default_prices"]).items():
             http("POST", f"{UT_API}/items/{item['id']}/containers", email, token,
                  {"container": {"container_size_id": sizes[size], "price": float(price)}})
+    if removes or adds:  # edits stay a draft until published; screens and the app show the published menu
+        http("POST", f"{UT_API}/menus/{meta['untappd_tap_menu_id']}/publish", email, token)
+        print("  Untappd menu published")
     return unmapped
 
 
@@ -278,13 +281,14 @@ def render_menu(taps, beers, meta=None):
     half = (len(cards) + 1) // 2
     cols = "".join(f"<div class=col><h2>_DRAFT</h2>{''.join(c)}</div>" for c in (cards[:half], cards[half:]))
     logo = foot.get("logo_url")
-    logo_html = f"<img class=logo src='{esc(logo)}' alt='Basic City'>" if logo else "<div class=logo>BASIC CITY</div>"
+    logo_html = (f"<img class=logo id=logo crossorigin=anonymous src='{esc(logo)}' alt='Basic City'>"
+                 if logo else "<div class=logo>BASIC CITY</div>")
     today = datetime.date.today().strftime("%B %-d, %Y")
     page = f"""<!doctype html><meta charset=utf-8><title>Beer on Tap</title><style>
 @page{{size:letter;margin:.45in}}html,body{{margin:0}}
 body{{font-family:"Fira Sans","Avenir Next","Helvetica Neue",Arial,sans-serif;color:#111;height:9.95in;display:flex;flex-direction:column}}
 .box{{border:2.5px solid #111}}.hd{{display:flex;justify-content:space-between;align-items:center;padding:14pt 14pt 12pt;border-bottom:2.5px solid #111}}
-h1{{margin:0;font-size:20pt;letter-spacing:.5pt}}.sub{{font-size:12pt}}.logo{{height:44pt;max-width:120pt;object-fit:contain;font-weight:bold;letter-spacing:2pt}}
+h1{{margin:0;font-size:20pt;letter-spacing:.5pt}}.sub{{font-size:12pt}}.logo{{height:44pt;max-width:120pt;object-fit:contain;font-weight:bold;letter-spacing:2pt;filter:grayscale(1) brightness(1.25) contrast(1.8)}}
 .cols{{display:grid;grid-template-columns:1fr 1fr;font-size:10pt}}.col{{padding:10pt 14pt 6pt}}.col+.col{{border-left:2.5px solid #111}}
 h2{{font-size:1.6em;margin:0 0 .5em}}.beer{{margin:0 0 .8em;break-inside:avoid}}.nm{{font-weight:600;font-size:1.25em}}
 .st{{font-size:1.05em}}.ds{{font-size:.9em;line-height:1.3;margin-top:.1em;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}}
@@ -297,7 +301,19 @@ h2{{font-size:1.6em;margin:0 0 .5em}}.beer{{margin:0 0 .8em;break-inside:avoid}}
 <div class=ft><div>{esc(foot.get("phone", ""))} \u2022 {esc(foot.get("website", ""))}</div>
 <div class=c><div class=tax>{esc(foot.get("note", ""))}</div><br>{today} \u2022 Subscribe to us on Untappd</div>
 <div class=r>{esc(foot.get("address", ""))}</div></div>
-<script>/* shrink the beer text until the box clears the footer: always one page */
+<script>/* logo: Untappd's file has a beige box and a faint reflection - keep only the dark ink */
+(function(){{var im=document.getElementById('logo');if(!im)return;
+function clean(){{try{{var c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;
+var x=c.getContext('2d');x.drawImage(im,0,0);var d=x.getImageData(0,0,c.width,c.height),p=d.data;
+for(var i=0;i<p.length;i+=4){{var l=.3*p[i]+.59*p[i+1]+.11*p[i+2];
+if(p[i+3]<20||l>140){{p[i+3]=0}}else{{p[i]=p[i+1]=p[i+2]=Math.max(0,l-40);p[i+3]=255}}}}
+x.putImageData(d,0,0);var W=c.width,H=c.height,a=W,b=H,e=-1,f=-1;
+for(var y=0;y<H;y++)for(var q=0;q<W;q++)if(p[(y*W+q)*4+3]){{if(q<a)a=q;if(q>e)e=q;if(y<b)b=y;if(y>f)f=y}}
+if(e>=a){{var t=document.createElement('canvas');t.width=e-a+1;t.height=f-b+1;t.getContext('2d').drawImage(c,a,b,t.width,t.height,0,0,t.width,t.height);c=t}}
+c.className='logo';c.style.filter='none';c.style.height='44pt';c.style.width='auto';im.replaceWith(c)}}catch(e){{}}}}
+if(im.complete&&im.naturalWidth)clean();else{{im.addEventListener('load',clean);
+im.addEventListener('error',function(){{var o=new Image();o.className='logo';o.alt='Basic City';o.src=im.src;im.replaceWith(o)}})}}}})();
+/* shrink the beer text until the box clears the footer: always one page */
 var c=document.querySelector('.cols'),b=document.querySelector('.box'),f=document.querySelector('.ft'),s=10;
 while(s>6&&b.getBoundingClientRect().bottom>f.getBoundingClientRect().top-12){{s-=.25;c.style.fontSize=s+'pt';}}</script>"""
     html_path = OUT / "tap-menu.html"
@@ -305,7 +321,7 @@ while(s>6&&b.getBoundingClientRect().bottom>f.getBoundingClientRect().top-12){{s
     pdf_path = OUT / "tap-menu.pdf"
     pdf_path.unlink(missing_ok=True)  # never print a stale menu if Chrome fails
     if Path(CHROME).exists():
-        subprocess.run([CHROME, "--headless", "--disable-gpu", "--no-pdf-header-footer",
+        subprocess.run([CHROME, "--headless", "--disable-gpu", "--no-pdf-header-footer", "--virtual-time-budget=10000",
                         f"--print-to-pdf={pdf_path}", html_path.as_uri()], capture_output=True)
     return pdf_path if pdf_path.exists() else html_path
 
