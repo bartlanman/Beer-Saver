@@ -34,7 +34,7 @@ BRANCH_ID = 1392
 BS_API = f"https://api.usbeersaver.com/api/{BRANCH_ID}"
 UT_API = "https://business.untappd.com/api/v1"
 STATE = Path(os.environ.get("TAP_SYNC_STATE", Path.home() / ".beersaver-tap-state.json"))
-OUT = Path(os.environ.get("TAP_SYNC_OUT", Path.home() / "Desktop" / "Tap Menu"))
+OUT = Path(os.environ.get("TAP_SYNC_OUT", HERE / "Tap Menu"))  # not ~/Desktop: macOS blocks background jobs there
 LEARNED = Path(os.environ.get("TAP_SYNC_LEARNED", HERE / "learned-beers.json"))  # beers found automatically
 CHROME = os.environ.get("CHROME", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 
@@ -127,12 +127,12 @@ def _match(query, item):
 
 
 def lookup_new_beers(taps, beers, meta, live=True):
-    """Give every beer on a Taproom tap full menu details before anything prints.
+    """Give every beer on a Taproom or Foundry tap full menu details before anything prints.
 
     Beers missing from beer-map.json / learned-beers.json are looked up on Untappd:
     first on our own Untappd tap menu (keeps its prices), then in the Untappd beer
     database (priced by ABV). Results are saved to learned-beers.json."""
-    new = sorted({t["beer"] for t in taps if t["bar"] == "1 Taproom" and t["beer"] != "*EMPTY"
+    new = sorted({t["beer"] for t in taps if t["bar"] in ("1 Taproom", "2 Foundry") and t["beer"] != "*EMPTY"
                   and not (beers.get(t["beer"]) or {}).get("untappd_id")})
     if not new:
         return []
@@ -253,6 +253,9 @@ def untappd_sync(taps, beers, meta, live):
         for size, price in (b.get("prices") or meta["default_prices"]).items():
             http("POST", f"{UT_API}/items/{item['id']}/containers", email, token,
                  {"container": {"container_size_id": sizes[size], "price": float(price)}})
+    if removes or adds:  # edits stay a draft until published; screens and the app show the published menu
+        http("POST", f"{UT_API}/menus/{meta['untappd_tap_menu_id']}/publish", email, token)
+        print("  Untappd menu published")
     return unmapped
 
 
@@ -278,13 +281,14 @@ def render_menu(taps, beers, meta=None):
     half = (len(cards) + 1) // 2
     cols = "".join(f"<div class=col><h2>_DRAFT</h2>{''.join(c)}</div>" for c in (cards[:half], cards[half:]))
     logo = foot.get("logo_url")
-    logo_html = f"<img class=logo src='{esc(logo)}' alt='Basic City'>" if logo else "<div class=logo>BASIC CITY</div>"
+    logo_html = (f"<img class=logo id=logo crossorigin=anonymous src='{esc(logo)}' alt='Basic City'>"
+                 if logo else "<div class=logo>BASIC CITY</div>")
     today = datetime.date.today().strftime("%B %-d, %Y")
     page = f"""<!doctype html><meta charset=utf-8><title>Beer on Tap</title><style>
 @page{{size:letter;margin:.45in}}html,body{{margin:0}}
 body{{font-family:"Fira Sans","Avenir Next","Helvetica Neue",Arial,sans-serif;color:#111;height:9.95in;display:flex;flex-direction:column}}
 .box{{border:2.5px solid #111}}.hd{{display:flex;justify-content:space-between;align-items:center;padding:14pt 14pt 12pt;border-bottom:2.5px solid #111}}
-h1{{margin:0;font-size:20pt;letter-spacing:.5pt}}.sub{{font-size:12pt}}.logo{{height:44pt;max-width:120pt;object-fit:contain;font-weight:bold;letter-spacing:2pt}}
+h1{{margin:0;font-size:20pt;letter-spacing:.5pt}}.sub{{font-size:12pt}}.logo{{height:44pt;max-width:120pt;object-fit:contain;font-weight:bold;letter-spacing:2pt;filter:grayscale(1) brightness(1.25) contrast(1.8)}}
 .cols{{display:grid;grid-template-columns:1fr 1fr;font-size:10pt}}.col{{padding:10pt 14pt 6pt}}.col+.col{{border-left:2.5px solid #111}}
 h2{{font-size:1.6em;margin:0 0 .5em}}.beer{{margin:0 0 .8em;break-inside:avoid}}.nm{{font-weight:600;font-size:1.25em}}
 .st{{font-size:1.05em}}.ds{{font-size:.9em;line-height:1.3;margin-top:.1em;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}}
@@ -297,7 +301,19 @@ h2{{font-size:1.6em;margin:0 0 .5em}}.beer{{margin:0 0 .8em;break-inside:avoid}}
 <div class=ft><div>{esc(foot.get("phone", ""))} \u2022 {esc(foot.get("website", ""))}</div>
 <div class=c><div class=tax>{esc(foot.get("note", ""))}</div><br>{today} \u2022 Subscribe to us on Untappd</div>
 <div class=r>{esc(foot.get("address", ""))}</div></div>
-<script>/* shrink the beer text until the box clears the footer: always one page */
+<script>/* logo: Untappd's file has a beige box and a faint reflection - keep only the dark ink */
+(function(){{var im=document.getElementById('logo');if(!im)return;
+function clean(){{try{{var c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;
+var x=c.getContext('2d');x.drawImage(im,0,0);var d=x.getImageData(0,0,c.width,c.height),p=d.data;
+for(var i=0;i<p.length;i+=4){{var l=.3*p[i]+.59*p[i+1]+.11*p[i+2];
+if(p[i+3]<20||l>140){{p[i+3]=0}}else{{p[i]=p[i+1]=p[i+2]=Math.max(0,l-40);p[i+3]=255}}}}
+x.putImageData(d,0,0);var W=c.width,H=c.height,a=W,b=H,e=-1,f=-1;
+for(var y=0;y<H;y++)for(var q=0;q<W;q++)if(p[(y*W+q)*4+3]){{if(q<a)a=q;if(q>e)e=q;if(y<b)b=y;if(y>f)f=y}}
+if(e>=a){{var t=document.createElement('canvas');t.width=e-a+1;t.height=f-b+1;t.getContext('2d').drawImage(c,a,b,t.width,t.height,0,0,t.width,t.height);c=t}}
+c.className='logo';c.style.filter='none';c.style.height='44pt';c.style.width='auto';im.replaceWith(c)}}catch(e){{}}}}
+if(im.complete&&im.naturalWidth)clean();else{{im.addEventListener('load',clean);
+im.addEventListener('error',function(){{var o=new Image();o.className='logo';o.alt='Basic City';o.src=im.src;im.replaceWith(o)}})}}}})();
+/* shrink the beer text until the box clears the footer: always one page */
 var c=document.querySelector('.cols'),b=document.querySelector('.box'),f=document.querySelector('.ft'),s=10;
 while(s>6&&b.getBoundingClientRect().bottom>f.getBoundingClientRect().top-12){{s-=.25;c.style.fontSize=s+'pt';}}</script>"""
     html_path = OUT / "tap-menu.html"
@@ -305,9 +321,115 @@ while(s>6&&b.getBoundingClientRect().bottom>f.getBoundingClientRect().top-12){{s
     pdf_path = OUT / "tap-menu.pdf"
     pdf_path.unlink(missing_ok=True)  # never print a stale menu if Chrome fails
     if Path(CHROME).exists():
-        subprocess.run([CHROME, "--headless", "--disable-gpu", "--no-pdf-header-footer",
+        subprocess.run([CHROME, "--headless", "--disable-gpu", "--no-pdf-header-footer", "--virtual-time-budget=10000",
                         f"--print-to-pdf={pdf_path}", html_path.as_uri()], capture_output=True)
     return pdf_path if pdf_path.exists() else html_path
+
+
+def _is_house(b):
+    return "basic city" in (b.get("brewery") or "").lower()
+
+
+def foundry_sync(taps, beers, meta, live):
+    """Make the Untappd 'Foundry On Tap' Draft / Guest Taps sections match Beer Saver's Foundry taps.
+
+    Every item in those two sections is managed here; More Drinks is never touched.
+    Prices come from foundry_price in beer-map.json (Toast prices, tax included); a beer
+    without one gets meta['foundry']['default_prices'] and the log says CHECK PRICE."""
+    f = meta["foundry"]
+    email, token = secret("UNTAPPD_EMAIL", "untappd-email"), secret("UNTAPPD_TOKEN", "untappd-token")
+    want = {}
+    for t in taps:
+        if t["bar"] != "2 Foundry" or t["beer"] == "*EMPTY":
+            continue
+        b = beers.get(t["beer"]) or {}
+        if not b.get("untappd_id"):
+            print(f"  Foundry: '{t['beer']}' has no Untappd match - not on the screen")
+            continue
+        want.setdefault(b["untappd_id"], b)
+    have = {}
+    for kind in ("house", "guest"):
+        for i in http("GET", f"{UT_API}/sections/{f['sections'][kind]}/items", email, token).get("items", []):
+            have[i.get("untappd_id")] = (kind, i)
+    removes = [i for uid, (k, i) in have.items() if uid not in want or k != ("house" if _is_house(want[uid]) else "guest")]
+    adds = [b for uid, b in want.items() if uid not in have or have[uid][1] in removes]
+    for i in removes:
+        print(f"  Foundry remove   {i.get('name')}")
+    for b in adds:
+        kind = "house" if _is_house(b) else "guest"
+        name = b.get("foundry_name") or re.sub(r"^Guest Tap! - ", "", b.get("menu_name") or b["beersaver"])
+        price = b.get("foundry_price")
+        note = "" if price else "  CHECK PRICE: no Toast price saved, used the default"
+        price = price or f["default_prices"][kind]
+        b["_foundry"] = (kind, name, price)
+        print(f"  Foundry add      {name} ${price} ({'Draft' if kind == 'house' else 'Guest Taps'}){note}")
+    if not live:
+        return
+    for i in removes:
+        http("DELETE", f"{UT_API}/items/{i['id']}", email, token)
+    for b in adds:
+        kind, name, price = b.pop("_foundry")
+        res = http("POST", f"{UT_API}/sections/{f['sections'][kind]}/items", email, token, {"untappd_id": b["untappd_id"]})
+        item = res.get("item") or (res.get("items") or [None])[0]
+        http("PATCH", f"{UT_API}/items/{item['id']}", email, token, {"item": {"name": name}})
+        http("POST", f"{UT_API}/items/{item['id']}/containers", email, token,
+             {"container": {"container_size_id": f["container_size_id"], "price": float(price)}})
+    if adds or removes:  # Untappd puts new items first; put both sections back in tap order
+        order = list(want)
+        for kind in ("house", "guest"):
+            items = http("GET", f"{UT_API}/sections/{f['sections'][kind]}/items", email, token).get("items", [])
+            items.sort(key=lambda i: order.index(i["untappd_id"]) if i.get("untappd_id") in order else 99)
+            for pos, i in enumerate(items):
+                if i.get("position") != pos:
+                    http("PATCH", f"{UT_API}/items/{i['id']}", email, token, {"item": {"position": pos}})
+
+
+def foundry_screen(meta, live, force=False):
+    """Rebuild the Foundry bar screen image from the Untappd 'Foundry On Tap' menu when it changed
+    (beer changes from Beer Saver, or hand edits to More Drinks in Untappd)."""
+    import hashlib
+    import foundry_board
+    f = meta["foundry"]
+    email, token = secret("UNTAPPD_EMAIL", "untappd-email"), secret("UNTAPPD_TOKEN", "untappd-token")
+    sections = {}
+    for kind in ("house", "guest", "other"):
+        rows = []
+        for i in sorted(http("GET", f"{UT_API}/sections/{f['sections'][kind]}/items", email, token).get("items", []),
+                        key=lambda i: i.get("position") or 0):
+            cs = i.get("containers") or http("GET", f"{UT_API}/items/{i['id']}/containers", email, token).get("containers", [])
+            rows.append((i.get("name"), cs[0]["price"] if cs else ""))
+        sections[kind] = rows
+    digest = hashlib.sha1(json.dumps(sections, sort_keys=True).encode()).hexdigest()
+    out = OUT.parent / "Foundry Board" if OUT.name == "Tap Menu" else OUT / "Foundry Board"
+    stamp = out / "last.sha1"
+    if not force and stamp.exists() and stamp.read_text() == digest:
+        return None
+    lines = " / ".join(f"{n} ${p}" for k in ("house", "guest", "other") for n, p in sections[k])
+    print(f"  Foundry screen: {lines}")
+    if not live:
+        return None
+    png = foundry_board.render_board(sections, out)
+    if png:
+        stamp.write_text(digest)
+        print(f"  Foundry screen image: {png}")
+    # Paper menus for the Foundry: letter table tents + 11x17 landscape boards
+    printer = os.environ.get("MENU_PRINTER")
+    if printer:
+        tent, poster = foundry_board.render_prints(sections, out)
+        # The Mac mini's "Kyocera" queue (Generic PostScript) has no 11x17 size, so 11x17s go to a second
+        # queue on the same printer whose PPD adds Tabloid (see INSTALL-Mac-mini.md, "11x17 printer").
+        tabloid = os.environ.get("FOUNDRY_POSTER_PRINTER", "Kyocera_11x17")
+        if subprocess.run(["lpstat", "-p", tabloid], capture_output=True).returncode != 0:
+            print(f"  WARNING: printer {tabloid} not found - 11x17s would print on letter; skipped")
+            tabloid = None
+        jobs = ((tent, printer, os.environ.get("FOUNDRY_TENT_COPIES", "12"), ["-o", "media=Letter"], "letter table tents"),
+                (poster, tabloid, os.environ.get("FOUNDRY_POSTER_COPIES", "10"),
+                 ["-o", "PageSize=Tabloid", "-o", "fit-to-page"], "11x17 menus"))
+        for pdf, queue, n, opts, what in jobs:
+            if pdf and queue and int(n) > 0:
+                subprocess.run(["lp", "-d", queue, "-n", n, *opts, str(pdf)], check=False)
+                print(f"  Sent {n} Foundry {what} to {queue}")
+    return png
 
 
 def main():
@@ -326,6 +448,7 @@ def main():
     if not changes:
         if a.live:
             STATE.write_text(json.dumps(taps, indent=1))  # keep keg levels/retap times current
+        _foundry(meta, a)
         return
     for t in changes:
         print(f"  {t['bar']} {t['tap']:5} {t['beer']}  (changed {t['connect']}, {t['pct']}% left)")
@@ -335,11 +458,17 @@ def main():
     first_run = not old and not a.force
     if first_run:
         print("  First run: recording the current taps as the starting point; Untappd left as is.")
-    unmapped = [] if (a.no_untappd or first_run) else untappd_sync(taps, beers, meta, a.live)
+    taproom = [t for t in changes if t["bar"] == "1 Taproom"]
+    unmapped = [] if (a.no_untappd or first_run or not taproom) else untappd_sync(taps, beers, meta, a.live)
+    if "foundry" in meta and not a.no_untappd and (first_run or any(t["bar"] == "2 Foundry" for t in changes)):
+        try:
+            foundry_sync(taps, beers, meta, a.live)
+        except Exception as e:
+            print(f"  Foundry sync failed: {e}")
     menu = render_menu(taps, beers, meta)
     print(f"  Menu: {menu}")
     printer = os.environ.get("MENU_PRINTER")
-    if a.live and printer and menu.suffix == ".pdf":
+    if a.live and printer and menu.suffix == ".pdf" and (taproom or a.force):
         copies = os.environ.get("MENU_COPIES", "10")
         subprocess.run(["lp", "-d", printer, "-n", copies, str(menu)], check=False)
         print(f"  Sent {copies} copies to printer {printer}")
@@ -351,6 +480,16 @@ def main():
               "(buttons appear there within ~90 min) for: " + ", ".join(fresh))
     if a.live or not old:
         STATE.write_text(json.dumps(taps, indent=1))
+    _foundry(meta, a)
+
+
+def _foundry(meta, a):
+    if "foundry" not in meta or a.no_untappd:
+        return
+    try:
+        foundry_screen(meta, a.live, a.force)
+    except Exception as e:  # never let the screen stop the menu sync
+        print(f"  Foundry screen failed: {e}")
 
 
 if __name__ == "__main__":
