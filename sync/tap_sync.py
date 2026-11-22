@@ -127,12 +127,12 @@ def _match(query, item):
 
 
 def lookup_new_beers(taps, beers, meta, live=True):
-    """Give every beer on a Taproom tap full menu details before anything prints.
+    """Give every beer on a Taproom or Foundry tap full menu details before anything prints.
 
     Beers missing from beer-map.json / learned-beers.json are looked up on Untappd:
     first on our own Untappd tap menu (keeps its prices), then in the Untappd beer
     database (priced by ABV). Results are saved to learned-beers.json."""
-    new = sorted({t["beer"] for t in taps if t["bar"] == "1 Taproom" and t["beer"] != "*EMPTY"
+    new = sorted({t["beer"] for t in taps if t["bar"] in ("1 Taproom", "2 Foundry") and t["beer"] != "*EMPTY"
                   and not (beers.get(t["beer"]) or {}).get("untappd_id")})
     if not new:
         return []
@@ -326,6 +326,112 @@ while(s>6&&b.getBoundingClientRect().bottom>f.getBoundingClientRect().top-12){{s
     return pdf_path if pdf_path.exists() else html_path
 
 
+def _is_house(b):
+    return "basic city" in (b.get("brewery") or "").lower()
+
+
+def foundry_sync(taps, beers, meta, live):
+    """Make the Untappd 'Foundry On Tap' Draft / Guest Taps sections match Beer Saver's Foundry taps.
+
+    Every item in those two sections is managed here; More Drinks is never touched.
+    Prices come from foundry_price in beer-map.json (Toast prices, tax included); a beer
+    without one gets meta['foundry']['default_prices'] and the log says CHECK PRICE."""
+    f = meta["foundry"]
+    email, token = secret("UNTAPPD_EMAIL", "untappd-email"), secret("UNTAPPD_TOKEN", "untappd-token")
+    want = {}
+    for t in taps:
+        if t["bar"] != "2 Foundry" or t["beer"] == "*EMPTY":
+            continue
+        b = beers.get(t["beer"]) or {}
+        if not b.get("untappd_id"):
+            print(f"  Foundry: '{t['beer']}' has no Untappd match - not on the screen")
+            continue
+        want.setdefault(b["untappd_id"], b)
+    have = {}
+    for kind in ("house", "guest"):
+        for i in http("GET", f"{UT_API}/sections/{f['sections'][kind]}/items", email, token).get("items", []):
+            have[i.get("untappd_id")] = (kind, i)
+    removes = [i for uid, (k, i) in have.items() if uid not in want or k != ("house" if _is_house(want[uid]) else "guest")]
+    adds = [b for uid, b in want.items() if uid not in have or have[uid][1] in removes]
+    for i in removes:
+        print(f"  Foundry remove   {i.get('name')}")
+    for b in adds:
+        kind = "house" if _is_house(b) else "guest"
+        name = b.get("foundry_name") or re.sub(r"^Guest Tap! - ", "", b.get("menu_name") or b["beersaver"])
+        price = b.get("foundry_price")
+        note = "" if price else "  CHECK PRICE: no Toast price saved, used the default"
+        price = price or f["default_prices"][kind]
+        b["_foundry"] = (kind, name, price)
+        print(f"  Foundry add      {name} ${price} ({'Draft' if kind == 'house' else 'Guest Taps'}){note}")
+    if not live:
+        return
+    for i in removes:
+        http("DELETE", f"{UT_API}/items/{i['id']}", email, token)
+    for b in adds:
+        kind, name, price = b.pop("_foundry")
+        res = http("POST", f"{UT_API}/sections/{f['sections'][kind]}/items", email, token, {"untappd_id": b["untappd_id"]})
+        item = res.get("item") or (res.get("items") or [None])[0]
+        http("PATCH", f"{UT_API}/items/{item['id']}", email, token, {"item": {"name": name}})
+        http("POST", f"{UT_API}/items/{item['id']}/containers", email, token,
+             {"container": {"container_size_id": f["container_size_id"], "price": float(price)}})
+    if adds or removes:  # Untappd puts new items first; put both sections back in tap order
+        order = list(want)
+        for kind in ("house", "guest"):
+            items = http("GET", f"{UT_API}/sections/{f['sections'][kind]}/items", email, token).get("items", [])
+            items.sort(key=lambda i: order.index(i["untappd_id"]) if i.get("untappd_id") in order else 99)
+            for pos, i in enumerate(items):
+                if i.get("position") != pos:
+                    http("PATCH", f"{UT_API}/items/{i['id']}", email, token, {"item": {"position": pos}})
+
+
+def foundry_screen(meta, live, force=False):
+    """Rebuild the Foundry bar screen image from the Untappd 'Foundry On Tap' menu when it changed
+    (beer changes from Beer Saver, or hand edits to More Drinks in Untappd)."""
+    import hashlib
+    import foundry_board
+    f = meta["foundry"]
+    email, token = secret("UNTAPPD_EMAIL", "untappd-email"), secret("UNTAPPD_TOKEN", "untappd-token")
+    sections = {}
+    for kind in ("house", "guest", "other"):
+        rows = []
+        for i in sorted(http("GET", f"{UT_API}/sections/{f['sections'][kind]}/items", email, token).get("items", []),
+                        key=lambda i: i.get("position") or 0):
+            cs = i.get("containers") or http("GET", f"{UT_API}/items/{i['id']}/containers", email, token).get("containers", [])
+            rows.append((i.get("name"), cs[0]["price"] if cs else ""))
+        sections[kind] = rows
+    digest = hashlib.sha1(json.dumps(sections, sort_keys=True).encode()).hexdigest()
+    out = OUT.parent / "Foundry Board" if OUT.name == "Tap Menu" else OUT / "Foundry Board"
+    stamp = out / "last.sha1"
+    if not force and stamp.exists() and stamp.read_text() == digest:
+        return None
+    lines = " / ".join(f"{n} ${p}" for k in ("house", "guest", "other") for n, p in sections[k])
+    print(f"  Foundry screen: {lines}")
+    if not live:
+        return None
+    png = foundry_board.render_board(sections, out)
+    if png:
+        stamp.write_text(digest)
+        print(f"  Foundry screen image: {png}")
+    # Paper menus for the Foundry: letter table tents + 11x17 landscape boards
+    printer = os.environ.get("MENU_PRINTER")
+    if printer:
+        tent, poster = foundry_board.render_prints(sections, out)
+        # The Mac mini's "Kyocera" queue (Generic PostScript) has no 11x17 size, so 11x17s go to a second
+        # queue on the same printer whose PPD adds Tabloid (see INSTALL-Mac-mini.md, "11x17 printer").
+        tabloid = os.environ.get("FOUNDRY_POSTER_PRINTER", "Kyocera_11x17")
+        if subprocess.run(["lpstat", "-p", tabloid], capture_output=True).returncode != 0:
+            print(f"  WARNING: printer {tabloid} not found - 11x17s would print on letter; skipped")
+            tabloid = None
+        jobs = ((tent, printer, os.environ.get("FOUNDRY_TENT_COPIES", "12"), ["-o", "media=Letter"], "letter table tents"),
+                (poster, tabloid, os.environ.get("FOUNDRY_POSTER_COPIES", "10"),
+                 ["-o", "PageSize=Tabloid", "-o", "fit-to-page"], "11x17 menus"))
+        for pdf, queue, n, opts, what in jobs:
+            if pdf and queue and int(n) > 0:
+                subprocess.run(["lp", "-d", queue, "-n", n, *opts, str(pdf)], check=False)
+                print(f"  Sent {n} Foundry {what} to {queue}")
+    return png
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--live", action="store_true", help="actually update Untappd and print")
@@ -342,6 +448,7 @@ def main():
     if not changes:
         if a.live:
             STATE.write_text(json.dumps(taps, indent=1))  # keep keg levels/retap times current
+        _foundry(meta, a)
         return
     for t in changes:
         print(f"  {t['bar']} {t['tap']:5} {t['beer']}  (changed {t['connect']}, {t['pct']}% left)")
@@ -351,11 +458,17 @@ def main():
     first_run = not old and not a.force
     if first_run:
         print("  First run: recording the current taps as the starting point; Untappd left as is.")
-    unmapped = [] if (a.no_untappd or first_run) else untappd_sync(taps, beers, meta, a.live)
+    taproom = [t for t in changes if t["bar"] == "1 Taproom"]
+    unmapped = [] if (a.no_untappd or first_run or not taproom) else untappd_sync(taps, beers, meta, a.live)
+    if "foundry" in meta and not a.no_untappd and (first_run or any(t["bar"] == "2 Foundry" for t in changes)):
+        try:
+            foundry_sync(taps, beers, meta, a.live)
+        except Exception as e:
+            print(f"  Foundry sync failed: {e}")
     menu = render_menu(taps, beers, meta)
     print(f"  Menu: {menu}")
     printer = os.environ.get("MENU_PRINTER")
-    if a.live and printer and menu.suffix == ".pdf":
+    if a.live and printer and menu.suffix == ".pdf" and (taproom or a.force):
         copies = os.environ.get("MENU_COPIES", "10")
         subprocess.run(["lp", "-d", printer, "-n", copies, str(menu)], check=False)
         print(f"  Sent {copies} copies to printer {printer}")
@@ -367,6 +480,16 @@ def main():
               "(buttons appear there within ~90 min) for: " + ", ".join(fresh))
     if a.live or not old:
         STATE.write_text(json.dumps(taps, indent=1))
+    _foundry(meta, a)
+
+
+def _foundry(meta, a):
+    if "foundry" not in meta or a.no_untappd:
+        return
+    try:
+        foundry_screen(meta, a.live, a.force)
+    except Exception as e:  # never let the screen stop the menu sync
+        print(f"  Foundry screen failed: {e}")
 
 
 if __name__ == "__main__":
